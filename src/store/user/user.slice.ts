@@ -17,11 +17,13 @@ type UserInitialState = {
     signIn: boolean;
     signOut: boolean;
     setUserData: boolean;
+    createUser: boolean;
   };
   loading: {
     signIn: boolean;
     signOut: boolean;
     setUserData: boolean;
+    createUser: boolean;
   };
 };
 
@@ -43,6 +45,7 @@ const initialState: UserInitialState = {
     'auth/weak-password': false,
     genericError: false,
     signIn: false,
+    createUser: false,
     signOut: false,
     setUserData: false,
   },
@@ -50,6 +53,7 @@ const initialState: UserInitialState = {
     signIn: false,
     signOut: false,
     setUserData: false,
+    createUser: false,
   },
 };
 
@@ -70,6 +74,20 @@ export const userSlice = createSlice({
     signInFail: state => {
       state.errors.signIn = true;
       state.loading.signIn = false;
+    },
+    //createUser
+    createUserStart: state => {
+      state.loading.createUser = true;
+      state.errors.createUser = false;
+    },
+    createUserSuccess: (state, action: PayloadAction<string>) => {
+      state.userAuth = action.payload;
+      state.loading.createUser = false;
+      state.errors.createUser = false;
+    },
+    createUserFail: state => {
+      state.errors.createUser = true;
+      state.loading.createUser = false;
     },
     //signOut:
     signOutStart: state => {
@@ -112,6 +130,9 @@ export const {
   setUserDataStart,
   setUserDataSuccess,
   setUserDataFail,
+  createUserFail,
+  createUserStart,
+  createUserSuccess,
 } = userSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
@@ -209,4 +230,7 @@ export const selectAccountTotals = (state: RootState): AccountTotals[] => {
     };
   });
 };
+
+export const selectSignInLoading = (state: RootState) =>
+  state.user.loading.signIn;
 export default userSlice.reducer;

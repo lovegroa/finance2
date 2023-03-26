@@ -1,5 +1,5 @@
 // packages
-import {useState, FormEvent, ChangeEvent} from 'react';
+import {useState, FormEvent, ChangeEvent, useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
 //utilities
@@ -15,8 +15,10 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Icon from '../assets/icon.png';
 import {signInWithGoogleRedirect} from '../utils/firebase/firebase.utils';
-import {actionSignIn} from '../store/user/user.action';
-import {useAppDispatch} from '../utils/hooks/hooks.utils';
+import {actionGoogleSignIn, actionSignIn} from '../store/user/user.action';
+import {useAppDispatch, useAppSelector} from '../utils/hooks/hooks.utils';
+import {selectSignInLoading} from '../store/user/user.slice';
+import Spinner from '../components/generic/spinner.component';
 
 const defaultFormFields = {
   email: '',
@@ -27,18 +29,15 @@ export default function SignIn() {
   const [formFields, setFormFields] = useState(defaultFormFields);
   const {email, password} = formFields;
   const dispatch = useAppDispatch();
-  //   useEffect(() => {
-  //     // for the google login redirect
-  //     const getRedirectResultAsync = async () => {
-  //       const response = await getRedirectResult(auth);
-  //       if (response) {
-  //         const userdoc = await CreateUserDocumentFromAuth(response.user);
-  //         console.log(userdoc);
-  //         dispatch(setCurrentUser(response.user) as any);
-  //       }
-  //     };
-  //     getRedirectResultAsync();
-  //   }, []);
+  const isLoading = useAppSelector(selectSignInLoading);
+
+  useEffect(() => {
+    // for the google login redirect
+    const getRedirectResultAsync = async () => {
+      await dispatch(actionGoogleSignIn());
+    };
+    getRedirectResultAsync();
+  }, []);
 
   const resetFormFields = () => {
     setFormFields(defaultFormFields);
@@ -94,64 +93,75 @@ export default function SignIn() {
           alignItems: 'center',
         }}
       >
-        <Avatar src={Icon} sx={{m: 1, bgcolor: 'secondary.main'}}></Avatar>
-        <Typography component="h1" variant="h5">
-          Login
-        </Typography>
-        <Box component="form" noValidate onSubmit={handleSubmit} sx={{mt: 3}}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                required
+        {isLoading ? (
+          <Spinner />
+        ) : (
+          <>
+            <Avatar src={Icon} sx={{m: 1, bgcolor: 'secondary.main'}}></Avatar>
+            <Typography component="h1" variant="h5">
+              Login
+            </Typography>
+            <Box
+              component="form"
+              noValidate
+              onSubmit={handleSubmit}
+              sx={{mt: 3}}
+            >
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email Address"
+                    name="email"
+                    autoComplete="email"
+                    type="email"
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    required
+                    fullWidth
+                    name="password"
+                    label="Password"
+                    type="password"
+                    id="password"
+                    autoComplete="new-password"
+                    onChange={handleChange}
+                  />
+                </Grid>
+              </Grid>
+              <Button
+                type="submit"
                 fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
-                type="email"
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type="password"
-                id="password"
-                autoComplete="new-password"
-                onChange={handleChange}
-              />
-            </Grid>
-          </Grid>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{mt: 3, mb: 2}}
-          >
-            Login
-          </Button>
-          <Grid container justifyContent="flex-end">
-            <Grid item>
-              <Link to="/sign-up">
-                <Typography variant="body2">
-                  Don't have an account yet? Sign up
-                </Typography>
-              </Link>
-            </Grid>
-          </Grid>
-        </Box>
-        <Button
-          onClick={signInWithGoogleRedirect}
-          type="button"
-          fullWidth
-          variant="contained"
-          sx={{mt: 3, mb: 2}}
-        >
-          Sign in with Google
-        </Button>
+                variant="contained"
+                sx={{mt: 3, mb: 2}}
+              >
+                Login
+              </Button>
+              <Grid container justifyContent="flex-end">
+                <Grid item>
+                  <Link to="/sign-up">
+                    <Typography variant="body2">
+                      Don't have an account yet? Sign up
+                    </Typography>
+                  </Link>
+                </Grid>
+              </Grid>
+            </Box>
+            <Button
+              onClick={signInWithGoogleRedirect}
+              type="button"
+              fullWidth
+              variant="contained"
+              sx={{mt: 3, mb: 2}}
+            >
+              Sign in with Google
+            </Button>
+          </>
+        )}
       </Box>
     </Container>
   );

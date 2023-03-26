@@ -8,33 +8,23 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 
-//firebase
-import {getRedirectResult} from 'firebase/auth';
-
 //local imports
 import Icon from '../assets/icon.png';
-import {
-  auth,
-  CreateUserDocumentFromAuth,
-  signInWithGoogleRedirect,
-} from '../utils/firebase/firebase.utils';
+import {signInWithGoogleRedirect} from '../utils/firebase/firebase.utils';
 
 //package imports
 import {ChangeEvent, FormEvent, useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {useDispatch} from 'react-redux';
-// import {createUser} from '../store/user/user.action';
+import {actionCreateUser, actionGoogleSignIn} from '../store/user/user.action';
+import {useAppDispatch} from '../utils/hooks/hooks.utils';
 
 export default function SignUp() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
+    // for the google login redirect
     const getRedirectResultAsync = async () => {
-      const response = await getRedirectResult(auth);
-      if (response) {
-        const userDocRef = await CreateUserDocumentFromAuth(response.user);
-        console.log(userDocRef);
-      }
+      await dispatch(actionGoogleSignIn());
     };
     getRedirectResultAsync();
   }, []);
@@ -65,38 +55,8 @@ export default function SignUp() {
       alert('Your passwords do not match');
       return;
     }
-    // dispatch(createUser(email, password, name) as any);
-
+    dispatch(actionCreateUser(email, password));
     resetFormFields();
-
-    // try {
-    //   const response = await createAuthUserWithEmailAndPassword(
-    //     email,
-    //     password
-    //   );
-    //   if (response) {
-    //     await CreateUserDocumentFromAuth(response.user, {name: name});
-    //     resetFormFields();
-    //   }
-    // } catch (error) {
-    //   if (error instanceof FirebaseError) {
-    //     switch (error.code) {
-    //       case 'auth/email-already-in-use':
-    //         alert('Email address is already in use.');
-    //         break;
-    //       case 'auth/invalid-email':
-    //         alert('Email address is not valid.');
-    //         break;
-    //       case 'auth/weak-password':
-    //         alert('Password is too weak.');
-    //         break;
-    //       default:
-    //         console.log('Error creating user:', error.message);
-    //     }
-    //   } else {
-    //     console.log('User creation error:', error);
-    //   }
-    // }
   };
 
   return (
