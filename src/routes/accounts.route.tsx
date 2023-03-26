@@ -2,7 +2,7 @@ import {useState} from 'react';
 import Navigation from '../components/navigation/navigation.component';
 
 import {UserType} from '../store/user/user.types';
-import {Button, Container} from '@mui/material';
+import {Container} from '@mui/material';
 
 import AccountsTable from '../components/accounts/accounts-table.component';
 import AddAccountForm from '../components/accounts/add-account-form.component';
