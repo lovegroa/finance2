@@ -18,6 +18,15 @@ const AccountsSummary: FC = () => {
       <Table aria-label="accounts table">
         <TableHead>
           <TableRow>
+            <TableCell></TableCell>
+            <TableCell colSpan={3} align="center">
+              Actual
+            </TableCell>
+            <TableCell colSpan={3} align="center">
+              Available
+            </TableCell>
+          </TableRow>
+          <TableRow>
             <TableCell>
               <strong>Currency</strong>
             </TableCell>
@@ -26,10 +35,10 @@ const AccountsSummary: FC = () => {
             <TableCell align="right">
               <strong>Total</strong>
             </TableCell>
-            <TableCell align="right">Debit Available</TableCell>
-            <TableCell align="right">Credit Available</TableCell>
+            <TableCell align="right">Debit</TableCell>
+            <TableCell align="right">Credit</TableCell>
             <TableCell align="right">
-              <strong>Total Available</strong>
+              <strong>Total</strong>
             </TableCell>
           </TableRow>
         </TableHead>
