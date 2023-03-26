@@ -1,12 +1,6 @@
-import {compose, configureStore, Middleware} from '@reduxjs/toolkit';
+import {configureStore, Middleware} from '@reduxjs/toolkit';
 import logger from 'redux-logger';
 import userSlice from './user/user.slice';
-
-// declare global {
-//   interface Window {
-//     __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
-//   }
-// }
 
 const middlewares: Middleware[] = [];
 
@@ -20,6 +14,5 @@ export const store = configureStore({
     getDefaultMiddleware().concat(middlewares),
 });
 
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
