@@ -1,48 +1,25 @@
-import {compose, createStore, applyMiddleware, Middleware} from 'redux';
-import {persistStore, persistReducer, PersistConfig} from 'redux-persist';
+import {compose, configureStore, Middleware} from '@reduxjs/toolkit';
 import logger from 'redux-logger';
-import storage from 'redux-persist/lib/storage';
-import thunk from 'redux-thunk';
+import userSlice from './user/user.slice';
 
-import {rootReducer} from './root-reducer';
-export type RootState = ReturnType<typeof rootReducer>;
+// declare global {
+//   interface Window {
+//     __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
+//   }
+// }
 
-declare global {
-  interface Window {
-    __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
-  }
+const middlewares: Middleware[] = [];
+
+if (process.env.NODE_ENV !== 'production') {
+  middlewares.push(logger);
 }
 
-type ExtendedPersistConfig = PersistConfig<RootState> & {
-  whitelist: (keyof RootState)[];
-  blacklist: (keyof RootState)[];
-};
-
-const persistConfig: ExtendedPersistConfig = {
-  key: 'root',
-  storage,
-  whitelist: [],
-  blacklist: ['userData'],
-};
-
-const persistedReducer = persistReducer(persistConfig, rootReducer);
-
-const middlewares = [
-  process.env.NODE_ENV !== 'production' && logger,
-  thunk,
-].filter((middleware): middleware is Middleware => Boolean(middleware));
-
-const composeEnhancer =
-  (process.env.NODE_ENV !== 'production' &&
-    window &&
-    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
-  compose;
-
-const composeEnhancers = composeEnhancer(applyMiddleware(...middlewares));
-
-export const store = createStore(persistedReducer, undefined, composeEnhancers);
-
-export const persistor = persistStore(store);
+export const store = configureStore({
+  reducer: {user: userSlice},
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware().concat(middlewares),
+});
 
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>;

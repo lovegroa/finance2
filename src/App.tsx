@@ -1,34 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import './App.css';
+import SignUp from './routes/sign-up.route';
+import {ThemeProvider} from '@mui/material/styles';
+import {Route, Routes} from 'react-router-dom';
+import Homepage from './routes/homepage.route';
+import SignIn from './routes/sign-in.route';
+import {defaultTheme} from './utils/themes/default.theme';
+import Accounts from './routes/accounts.route';
+import {useAppSelector} from './utils/hooks/hooks.utils';
+import {selectLoggedIn} from './store/user/user.slice';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const userIsLoggedIn = useAppSelector(selectLoggedIn);
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+    <>
+      <ThemeProvider theme={defaultTheme}>
+        <Routes>
+          {userIsLoggedIn ? (
+            <>
+              <Route path="/accounts" element={<Accounts />}></Route>
+              <Route path="/" element={<Homepage />}></Route>
+              <Route path="*" element={<Homepage />}></Route>
+            </>
+          ) : (
+            <>
+              <Route path="/sign-up" element={<SignUp />}></Route>
+              <Route path="/sign-in" element={<SignIn />}></Route>
+              <Route path="*" element={<SignIn />}></Route>
+            </>
+          )}
+        </Routes>
+      </ThemeProvider>
+    </>
+  );
 }
 
-export default App
+export default App;
