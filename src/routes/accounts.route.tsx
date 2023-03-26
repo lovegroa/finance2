@@ -17,6 +17,7 @@ const Accounts: React.FC = () => {
   return (
     <div>
       <Navigation></Navigation>
+      <br></br>
       <Container component="main" maxWidth="md">
         {showAddAccountForm ? (
           <AddAccountForm setShowAddAccountForm={setShowAddAccountForm} />
@@ -27,11 +28,11 @@ const Accounts: React.FC = () => {
           />
         ) : (
           <>
-            <AccountsSummary />
-            <Button onClick={() => setShowAddAccountForm(true)}>
-              Add account
-            </Button>
-            <AccountsTable setCurrentAccount={setCurrentAccount} />
+            <AccountsSummary /> <br></br>
+            <AccountsTable
+              setCurrentAccount={setCurrentAccount}
+              setShowAddAccountForm={setShowAddAccountForm}
+            />
           </>
         )}
       </Container>

@@ -8,6 +8,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Button,
 } from '@mui/material';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import CalculateIcon from '@mui/icons-material/Calculate';
@@ -19,9 +20,13 @@ type ChildProps = {
   setCurrentAccount: React.Dispatch<
     React.SetStateAction<UserType['accounts'][0] | undefined>
   >;
+  setShowAddAccountForm: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const AccountsTable: FC<ChildProps> = ({setCurrentAccount}) => {
+const AccountsTable: FC<ChildProps> = ({
+  setCurrentAccount,
+  setShowAddAccountForm,
+}) => {
   const accounts = useAppSelector(selectAccounts);
   return (
     <TableContainer>
@@ -34,10 +39,10 @@ const AccountsTable: FC<ChildProps> = ({setCurrentAccount}) => {
             <TableCell align="right">
               <MoneyIcon></MoneyIcon>
             </TableCell>
-            <TableCell>
+            <TableCell align="center">
               <CalculateIcon></CalculateIcon>
             </TableCell>
-            <TableCell>
+            <TableCell align="center">
               <PriorityHighIcon></PriorityHighIcon>
             </TableCell>
           </TableRow>
@@ -72,19 +77,31 @@ const AccountsTable: FC<ChildProps> = ({setCurrentAccount}) => {
                   >
                     {formatter.format(account.balance)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell align="center">
                     {account.includeInCalculations ? (
                       <DoneIcon></DoneIcon>
                     ) : (
                       <></>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell align="center">
                     {account.isPriority ? <DoneIcon></DoneIcon> : <></>}
                   </TableCell>
                 </TableRow>
               );
             })}
+          <TableRow>
+            <TableCell align="center" colSpan={4}>
+              <Button
+                type="submit"
+                variant="outlined"
+                sx={{mt: 3, mb: 2}}
+                onClick={() => setShowAddAccountForm(true)}
+              >
+                Add account
+              </Button>
+            </TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     </TableContainer>

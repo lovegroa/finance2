@@ -116,7 +116,6 @@ const AddAccountForm: React.FC<ChildProps> = ({setShowAddAccountForm}) => {
                 fullWidth
                 id="name"
                 label="Account name"
-                autoFocus
                 onChange={handleChange}
                 value={name}
               />
@@ -144,7 +143,6 @@ const AddAccountForm: React.FC<ChildProps> = ({setShowAddAccountForm}) => {
                 fullWidth
                 id="color"
                 label="Account color"
-                autoFocus
                 onChange={handleChange}
                 value={color}
                 type="color"
@@ -175,7 +173,6 @@ const AddAccountForm: React.FC<ChildProps> = ({setShowAddAccountForm}) => {
                 fullWidth
                 id="balance"
                 label="Balance"
-                autoFocus
                 onChange={handleChange}
                 value={balance}
                 type="number"
@@ -189,7 +186,6 @@ const AddAccountForm: React.FC<ChildProps> = ({setShowAddAccountForm}) => {
                 fullWidth
                 id="balanceLimit"
                 label={accountType === 'debit' ? 'Min balance' : 'Credit limit'}
-                autoFocus
                 onChange={handleChange}
                 value={balanceLimit}
                 type="number"
