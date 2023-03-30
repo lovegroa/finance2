@@ -17,7 +17,7 @@ export type UserType = {
   accounts: Account[];
   createdAt: string;
   email: string | null;
-  expenses: Expense[];
+  transactions: Transaction[];
   name: string | null;
   targets: Target[];
 };
@@ -29,7 +29,7 @@ type Target = {
   amount: number;
 };
 
-type Expense = {
+type Transaction = {
   id: string;
   name: string;
   createdDate: string;

@@ -47,7 +47,7 @@ export const CreateUserDocumentFromAuth = async (
       name: displayName,
       targets: [],
       accounts: [],
-      expenses: [],
+      transactions: [],
       email: email,
       createdAt: createdAt,
       ...additionalInformation,

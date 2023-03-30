@@ -15,7 +15,7 @@ import {useAppDispatch} from '../../utils/hooks/hooks.utils';
 import {actionSignOut} from '../../store/user/user.action';
 import SettingsIcon from '@mui/icons-material/Settings';
 
-const pages = ['accounts', 'targets', 'expenses'];
+const pages = ['accounts', 'targets', 'transactions'];
 const settings = ['Account', 'Sign Out'];
 
 function Navigation() {

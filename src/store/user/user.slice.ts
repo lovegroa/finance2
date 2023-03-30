@@ -33,7 +33,7 @@ const initialState: UserInitialState = {
     accounts: [],
     createdAt: new Date().toString(),
     email: '',
-    expenses: [],
+    transactions: [],
     name: '',
     targets: [],
   },
@@ -142,8 +142,8 @@ export const selectLoggedIn = (state: RootState) => !!state.user.userAuth;
 export const selectUserData = (state: RootState) => state.user.userData;
 export const selectAccounts = (state: RootState) =>
   state.user.userData.accounts;
-export const selectExpenses = (state: RootState) =>
-  state.user.userData.expenses;
+export const selectTransactions = (state: RootState) =>
+  state.user.userData.transactions;
 export const selectTargets = (state: RootState) => state.user.userData.targets;
 export const selectUsedCurrencies = (state: RootState) =>
   state.user.userData.accounts.map(account => account.currency);
