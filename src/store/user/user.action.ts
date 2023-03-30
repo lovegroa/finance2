@@ -63,6 +63,7 @@ export const actionSignIn =
       if (!userData) throw new Error();
       appDispatch(setUserDataSuccess(userData));
     } catch (error) {
+      console.log(error);
       appDispatch(setUserDataFail());
     }
   };

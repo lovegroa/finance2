@@ -8,6 +8,7 @@ import {defaultTheme} from './utils/themes/default.theme';
 import Accounts from './routes/accounts.route';
 import {useAppSelector} from './utils/hooks/hooks.utils';
 import {selectLoggedIn} from './store/user/user.slice';
+import Transactions from './routes/transactions.route';
 
 function App() {
   const userIsLoggedIn = useAppSelector(selectLoggedIn);
@@ -19,6 +20,7 @@ function App() {
           {userIsLoggedIn ? (
             <>
               <Route path="/accounts" element={<Accounts />}></Route>
+              <Route path="/transactions" element={<Transactions />}></Route>
               <Route path="/" element={<Homepage />}></Route>
               <Route path="*" element={<Homepage />}></Route>
             </>

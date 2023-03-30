@@ -35,9 +35,8 @@ type Transaction = {
   createdDate: string;
   startDate: string;
   endDate?: string;
-  targetDate: string;
   amount: number;
-  type: 'debit' | 'credit';
+  transactionType: 'debit' | 'credit';
   accountId: string;
   paidDates: string[];
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'once';
