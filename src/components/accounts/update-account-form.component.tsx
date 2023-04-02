@@ -1,4 +1,13 @@
-import {ChangeEvent, FormEvent, useState, MouseEvent} from 'react';
+import {
+  ChangeEvent,
+  FormEvent,
+  useState,
+  MouseEvent,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+  FC,
+} from 'react';
 import {
   Box,
   Button,
@@ -17,20 +26,18 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {UserType} from '../../store/user/user.types';
+import {Account, UserType} from '../../store/user/user.types';
 import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
 import {selectUserAuth, selectUserData} from '../../store/user/user.slice';
 import {actionUpdateUserData} from '../../store/user/user.action';
 import CloseIcon from '@mui/icons-material/Close';
 
 type ChildProps = {
-  setCurrentAccount: React.Dispatch<
-    React.SetStateAction<UserType['accounts'][0] | undefined>
-  >;
-  currentAccount: UserType['accounts'][0];
+  setCurrentAccount: Dispatch<SetStateAction<Account | undefined>>;
+  currentAccount: Account;
 };
 
-const UpdateAccountForm: React.FC<ChildProps> = ({
+const UpdateAccountForm: FC<ChildProps> = ({
   setCurrentAccount,
   currentAccount,
 }) => {
@@ -51,12 +58,16 @@ const UpdateAccountForm: React.FC<ChildProps> = ({
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const {name, value} = event.target;
-    if (name === 'isPriority' || name === 'includeInCalculations') {
+    if (name === 'balance' || name === 'balanceLimit') {
+      setFormFields({...formFields, [name]: Number(value)});
+    } else if (name === 'isPriority' || name === 'includeInCalculations') {
       setFormFields({...formFields, [name]: !formFields[name]});
     } else {
       setFormFields({...formFields, [name]: value});
     }
   };
+
+  useEffect(() => console.log(formFields), [formFields]);
 
   const handleSelectChange = (event: SelectChangeEvent<string>) => {
     const {name, value} = event.target;
