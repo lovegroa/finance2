@@ -1,4 +1,12 @@
-import {ChangeEvent, FormEvent, useState} from 'react';
+import {
+  ChangeEvent,
+  Dispatch,
+  FC,
+  FormEvent,
+  SetStateAction,
+  useState,
+  MouseEvent,
+} from 'react';
 import {actionUpdateUserData} from '../../store/user/user.action';
 import {
   selectAccounts,
@@ -6,9 +14,8 @@ import {
   selectUserData,
 } from '../../store/user/user.slice';
 
-import {UserType} from '../../store/user/user.types';
+import {Transaction, UserType} from '../../store/user/user.types';
 import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
-import {v4} from 'uuid';
 import {
   Box,
   Button,
@@ -25,36 +32,23 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import {convertDateToString} from '../../utils/general/general.utils';
 
 type ChildProps = {
-  setShowAddTransactionForm: React.Dispatch<React.SetStateAction<boolean>>;
+  setCurrentTransaction: Dispatch<SetStateAction<Transaction | undefined>>;
+  currentTransaction: Transaction;
 };
 
-const AddTransactionForm: React.FC<ChildProps> = ({
-  setShowAddTransactionForm: setShowAddTransactionForm,
+const UpdateTransactionForm: FC<ChildProps> = ({
+  setCurrentTransaction,
+  currentTransaction,
 }) => {
   const userData = useAppSelector(selectUserData);
   const userAuth = useAppSelector(selectUserAuth);
   const accounts = useAppSelector(selectAccounts);
-  const primaryAccount = accounts.filter(account => account.isPriority)[0];
 
   const dispatch = useAppDispatch();
 
-  const defaultFormFields: UserType['transactions'][0] = {
-    createdDate: new Date().toString(),
-    id: v4(),
-    name: '',
-    startDate: convertDateToString(new Date()),
-    endDate: convertDateToString(new Date()),
-    amount: 0,
-    transactionType: 'debit',
-    frequency: 'monthly',
-    accountId: primaryAccount.id,
-    paidDates: [],
-  };
-
-  const [formFields, setFormFields] = useState(defaultFormFields);
+  const [formFields, setFormFields] = useState(currentTransaction);
   const {
     startDate,
     endDate,
@@ -75,19 +69,28 @@ const AddTransactionForm: React.FC<ChildProps> = ({
     setFormFields({...formFields, [name]: value});
   };
 
-  const resetFormFields = () => {
-    setFormFields(defaultFormFields);
-  };
-
-  const addTransaction = async (event: FormEvent<HTMLFormElement>) => {
+  const updateTransaction = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!userAuth) return;
     const newUserData = JSON.parse(JSON.stringify(userData)) as UserType;
-    formFields.id = v4();
-    newUserData.transactions.push(formFields);
+    const index = newUserData.transactions.findIndex(transaction => {
+      return transaction.id === formFields.id;
+    });
+    if (index === -1) return;
+    newUserData.transactions[index] = formFields;
     dispatch(actionUpdateUserData(userAuth, newUserData));
-    setShowAddTransactionForm(false);
-    resetFormFields();
+    setCurrentTransaction(undefined);
+  };
+
+  const deleteTransaction = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (!userAuth) return;
+    const newUserData = JSON.parse(JSON.stringify(userData)) as UserType;
+    newUserData.transactions = newUserData.transactions.filter(transaction => {
+      return transaction.id !== formFields.id;
+    });
+    dispatch(actionUpdateUserData(userAuth, newUserData));
+    setCurrentTransaction(undefined);
   };
 
   return (
@@ -105,11 +108,16 @@ const AddTransactionForm: React.FC<ChildProps> = ({
           <Typography component="h1" variant="h5">
             Add transaction
           </Typography>
-          <IconButton onClick={() => setShowAddTransactionForm(false)}>
+          <IconButton onClick={() => setCurrentTransaction(undefined)}>
             <CloseIcon />
           </IconButton>
         </Grid>
-        <Box component="form" noValidate onSubmit={addTransaction} sx={{mt: 3}}>
+        <Box
+          component="form"
+          noValidate
+          onSubmit={updateTransaction}
+          sx={{mt: 3}}
+        >
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
@@ -223,7 +231,17 @@ const AddTransactionForm: React.FC<ChildProps> = ({
             variant="contained"
             sx={{mt: 3, mb: 2}}
           >
-            Add transaction
+            Update transaction
+          </Button>
+          <Button
+            type="button"
+            fullWidth
+            variant="contained"
+            sx={{mt: 3, mb: 2}}
+            onClick={deleteTransaction}
+            color="error"
+          >
+            Delete Transaction
           </Button>
         </Box>
       </Box>
@@ -231,4 +249,4 @@ const AddTransactionForm: React.FC<ChildProps> = ({
   );
 };
 
-export default AddTransactionForm;
+export default UpdateTransactionForm;

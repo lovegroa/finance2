@@ -1,16 +1,16 @@
 import {useState} from 'react';
 import Navigation from '../components/navigation/navigation.component';
 
-import {UserType} from '../store/user/user.types';
+import {Transaction} from '../store/user/user.types';
 import {Container} from '@mui/material';
 
 import TransactionsTable from '../components/transactions/transactions-table.component';
 import AddTransactionForm from '../components/transactions/add-transaction-form.component';
+import UpdateTransactionForm from '../components/transactions/update-transaction-form.component';
 
 const Transactions: React.FC = () => {
   const [showAddTransactionForm, setShowAddTransactionForm] = useState(false);
-  const [currentTransaction, setCurrentTransaction] =
-    useState<UserType['transactions'][0]>();
+  const [currentTransaction, setCurrentTransaction] = useState<Transaction>();
 
   return (
     <div>
@@ -22,13 +22,9 @@ const Transactions: React.FC = () => {
             setShowAddTransactionForm={setShowAddTransactionForm}
           />
         ) : currentTransaction ? (
-          //   <UpdateAccountForm
-          //     currentAccount={currentTransaction}
-          //     setCurrentAccount={setCurrentTransaction}
-          //   />
-          <TransactionsTable
+          <UpdateTransactionForm
+            currentTransaction={currentTransaction}
             setCurrentTransaction={setCurrentTransaction}
-            setShowAddTransactionForm={setShowAddTransactionForm}
           />
         ) : (
           <>
