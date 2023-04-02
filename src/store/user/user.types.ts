@@ -22,14 +22,14 @@ export type UserType = {
   targets: Target[];
 };
 
-type Target = {
+export type Target = {
   id: string;
   createdDate: string;
   targetDate: string;
   amount: number;
 };
 
-type Transaction = {
+export type Transaction = {
   id: string;
   name: string;
   createdDate: string;
@@ -42,7 +42,7 @@ type Transaction = {
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'once';
 };
 
-type Account = {
+export type Account = {
   id: string;
   name: string;
   createdDate: string;
