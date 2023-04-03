@@ -35,6 +35,9 @@ const LineChart: FC<ChildProps> = ({labels, datasets}) => {
           },
         },
       },
+      y: {
+        suggestedMin: 0,
+      },
     },
   };
 

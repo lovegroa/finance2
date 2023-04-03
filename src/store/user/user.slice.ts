@@ -1,6 +1,12 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {Currency} from 'firebase/analytics';
 import {User} from 'firebase/auth';
+import {
+  generateDatasets,
+  generateLabels,
+  hexToRgb,
+  totalDatasets,
+} from '../../utils/general/general.utils';
 import {RootState} from '../store';
 import {AccountType, UserType} from './user.types';
 
@@ -146,7 +152,9 @@ export const selectTransactions = (state: RootState) =>
   state.user.userData.transactions;
 export const selectTargets = (state: RootState) => state.user.userData.targets;
 export const selectUsedCurrencies = (state: RootState) =>
-  state.user.userData.accounts.map(account => account.currency);
+  Array.from(
+    new Set(state.user.userData.accounts.map(account => account.currency))
+  );
 
 type Totals = {
   total: number;
@@ -234,3 +242,59 @@ export const selectAccountTotals = (state: RootState): AccountTotals[] => {
 export const selectSignInLoading = (state: RootState) =>
   state.user.loading.signIn;
 export default userSlice.reducer;
+
+export type CashPerDay = {
+  [key: string]: {
+    dailyAmount: number;
+    totalAmount: number;
+    numberOfDays: number;
+  };
+};
+
+export const selectCashPerDay = (state: RootState): CashPerDay => {
+  const displayData = selectDisplayData(state);
+  const targetDate = new Date('2024-04-24');
+  const targetBalnce = 0;
+  const labels: Date[] = generateLabels(targetDate);
+
+  return displayData.reduce<CashPerDay>((acc, currency) => {
+    const totalData = currency.total[0].data;
+    const totalAmount = totalData[totalData.length - 1];
+
+    acc[currency.currency] = {
+      dailyAmount: (totalAmount - targetBalnce) / labels.length,
+      totalAmount: totalAmount - targetBalnce,
+      numberOfDays: labels.length,
+    };
+    return acc;
+  }, {});
+};
+
+export const selectDisplayData = (state: RootState) => {
+  const usedCurrencies = selectUsedCurrencies(state);
+  const accounts = selectAccounts(state);
+  const transactions = selectTransactions(state);
+  const targetDate = new Date('2024-04-24');
+  const labels: Date[] = generateLabels(targetDate);
+  return usedCurrencies.map(currency => {
+    const filteredAccounts = accounts.filter(
+      account => account.currency === currency
+    );
+    const datasets = generateDatasets(labels, filteredAccounts, transactions);
+    const totalColor = hexToRgb('#2c182f');
+
+    return {
+      currency: currency,
+      accounts: datasets,
+      total: [
+        {
+          label: currency,
+          data: totalDatasets(labels, datasets),
+          fill: true,
+          backgroundColor: `rgba(${totalColor.r},${totalColor.g},${totalColor.b},0.2)`,
+          borderColor: `rgba(${totalColor.r},${totalColor.g},${totalColor.b},1)`,
+        },
+      ],
+    };
+  });
+};

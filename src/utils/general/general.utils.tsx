@@ -25,14 +25,52 @@ export function hexToRgb(hex: string) {
         g: parseInt(result[2], 16),
         b: parseInt(result[3], 16),
       }
-    : null;
+    : {
+        r: 0,
+        g: 0,
+        b: 0,
+      };
 }
+
+export type GeneratedDataset = {
+  priority: boolean;
+  dataset: ChartDataset<'line', (number | Point | null)[]>;
+};
+
+export const generateAccountData = (
+  account: Account,
+  listTransactions: ListedTransaction[],
+  dates: Date[]
+) => {
+  let balance = account.balance;
+  return dates.map((date, index) => {
+    const amount = listTransactions
+      .filter(transaction => {
+        if (!index) {
+          //on the first date, it looks to see if anything older has not been paid yet
+          return new Date(transaction.date).getTime() <= date.getTime();
+        } else {
+          return transaction.date === convertDateToString(date);
+        }
+      })
+      .reduce((acc, transaction) => {
+        if (transaction.transactionType === 'debit') {
+          acc += Number(transaction.amount);
+        } else {
+          acc -= Number(transaction.amount);
+        }
+        return acc;
+      }, 0);
+    balance -= amount;
+    return balance;
+  });
+};
 
 export const generateDatasets = (
   dates: Date[],
   accounts: Account[],
   transactions: Transaction[]
-): ChartDataset<'line', (number | Point | null)[]>[] => {
+): GeneratedDataset[] => {
   return accounts.map(account => {
     //find all transactions by account
     const accountTransactions = transactions.filter(
@@ -48,37 +86,17 @@ export const generateDatasets = (
       return acc;
     }, []);
 
-    let balance = account.balance;
-    const accountData = dates.map((date, index) => {
-      const amount = accountListTransactions
-        .filter(transaction => {
-          if (!index) {
-            //on the first date, it looks to see if anything older has not been paid yet
-            return new Date(transaction.date).getTime() <= date.getTime();
-          } else {
-            return transaction.date === convertDateToString(date);
-          }
-        })
-        .reduce((acc, transaction) => {
-          if (transaction.transactionType === 'debit') {
-            acc += Number(transaction.amount);
-          } else {
-            acc -= Number(transaction.amount);
-          }
-          return acc;
-        }, 0);
-      balance -= amount;
-      return balance;
-    });
-
-    const result = hexToRgb(account.color);
+    const accountColor = hexToRgb(account.color);
 
     return {
-      label: account.name,
-      data: accountData,
-      fill: true,
-      backgroundColor: `rgba(${result?.r},${result?.g},${result?.b},0.2)`,
-      borderColor: `rgba(${result?.r},${result?.g},${result?.b},1)`,
+      priority: account.isPriority,
+      dataset: {
+        label: account.name,
+        data: generateAccountData(account, accountListTransactions, dates),
+        fill: true,
+        backgroundColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},0.2)`,
+        borderColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},1)`,
+      },
     };
   });
 };
@@ -145,4 +163,18 @@ export const listTransactions = (
   }
 
   return result;
+};
+
+export const totalDatasets = (labels: Date[], datasets: GeneratedDataset[]) => {
+  const initialTotals = new Array(labels.length).fill(0);
+
+  return datasets.reduce<number[]>((acc, dataset) => {
+    dataset.dataset.data.forEach((dataPoint, index) => {
+      if (!dataPoint) return;
+      if (typeof dataPoint !== 'number') return;
+      acc[index] += dataPoint;
+      return acc;
+    });
+    return acc;
+  }, initialTotals);
 };

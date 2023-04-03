@@ -1,63 +1,69 @@
 import Navigation from '../components/navigation/navigation.component';
-import {Box, Container} from '@mui/material';
+import {Box, Button, Container, Grid, Slider, Typography} from '@mui/material';
 import LineChart from '../components/generic/line-chart.component';
 import {useAppSelector} from '../utils/hooks/hooks.utils';
-import {
-  selectAccounts,
-  selectTransactions,
-  selectUsedCurrencies,
-} from '../store/user/user.slice';
-import {ChartDataset, Point} from 'chart.js';
-import {
-  generateDatasets,
-  generateLabels,
-  hexToRgb,
-} from '../utils/general/general.utils';
+import {selectCashPerDay, selectDisplayData} from '../store/user/user.slice';
+import {generateLabels} from '../utils/general/general.utils';
+import {Fragment, useEffect, useState} from 'react';
 
 const Homepage: React.FC = () => {
-  const accounts = useAppSelector(selectAccounts);
-  const transactions = useAppSelector(selectTransactions);
-  const usedCurrencies = useAppSelector(selectUsedCurrencies);
+  const originalDisplayData = useAppSelector(selectDisplayData);
+  const displayData = JSON.parse(
+    JSON.stringify(originalDisplayData)
+  ) as typeof originalDisplayData;
   const targetDate = new Date('2024-04-24');
   const labels: Date[] = generateLabels(targetDate);
-  const datasets: ChartDataset<'line', (number | Point | null)[]>[] =
-    generateDatasets(labels, accounts, transactions);
+  const cashPerDay = useAppSelector(selectCashPerDay);
+  const [sliderValue, setSliderValue] = useState<number>(0);
 
-  const displayData = usedCurrencies.map(currency => {
-    const datasets: ChartDataset<'line', (number | Point | null)[]>[] =
-      generateDatasets(
-        labels,
-        accounts.filter(account => account.currency === currency),
-        transactions
-      );
+  const [cpd, setCpd] = useState({...cashPerDay});
+  useEffect(() => {
+    setCpd({...cashPerDay});
+  }, [cashPerDay]);
 
-    const initialTotals = new Array(labels.length).fill(0);
-
-    const totalData = datasets.reduce<number[]>((acc, dataset) => {
-      dataset.data.forEach((dataPoint, index) => {
-        if (!dataPoint) return;
-        if (typeof dataPoint !== 'number') return;
-        acc[index] += dataPoint;
-        return acc;
-      });
-      return acc;
-    }, initialTotals);
-
-    const result = hexToRgb('#2c182f');
-
-    return {
-      accounts: datasets,
-      total: [
-        {
-          label: currency,
-          data: totalData,
-          fill: true,
-          backgroundColor: `rgba(${result?.r},${result?.g},${result?.b},0.2)`,
-          borderColor: `rgba(${result?.r},${result?.g},${result?.b},1)`,
-        },
-      ],
-    };
+  displayData.forEach(currencyData => {
+    currencyData.accounts.forEach(account => {
+      if (account.priority) {
+        account.dataset.data = account.dataset.data.map((d, i) => {
+          return (
+            (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1)
+          );
+        });
+      }
+    });
+    currencyData.total[0].data = currencyData.total[0].data.map((d, i) => {
+      return (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1);
+    });
   });
+
+  const defaultCurrency = displayData.length ? displayData[0].currency : null;
+  const [currencyState, setCurrencyState] = useState<string | null>(
+    defaultCurrency
+  );
+
+  const formatValue = (value: number) => {
+    if (!currencyState) return;
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyState,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+    return formatter.format(value);
+  };
+
+  function sliderHandler(event: Event, value: number | number[]) {
+    if (!currencyState) return;
+    if (typeof value !== 'number') return;
+    const tempCpd = JSON.parse(JSON.stringify(cashPerDay));
+    const item = tempCpd[currencyState];
+    item.dailyAmount = item.dailyAmount * Number(value);
+    item.totalAmount = item.totalAmount * value;
+
+    setCpd(tempCpd);
+
+    setSliderValue(Number(value));
+  }
 
   return (
     <div className="container">
@@ -69,16 +75,69 @@ const Homepage: React.FC = () => {
           py: 8,
         }}
       >
-        {displayData.map(({total, accounts}) => {
-          return (
-            <>
-              <LineChart labels={labels} datasets={accounts} />
-              <LineChart labels={labels} datasets={total} />
-            </>
-          );
-        })}
-        <LineChart labels={labels} datasets={datasets} />
-        <Container maxWidth="xl"></Container>
+        <Container maxWidth="md">
+          {displayData.map(({currency}) => (
+            <Button
+              key={currency}
+              variant={currency === currencyState ? 'contained' : 'text'}
+              onClick={() => setCurrencyState(currency)}
+            >
+              {currency}
+            </Button>
+          ))}
+
+          {displayData.map(({total, accounts, currency}) => {
+            if (currency !== currencyState) return <></>;
+            return (
+              <Fragment key={currency}>
+                <LineChart
+                  labels={labels}
+                  datasets={accounts
+                    .map(account => account.dataset)
+                    .concat(total)}
+                />
+              </Fragment>
+            );
+          })}
+          {!currencyState ? (
+            <></>
+          ) : (
+            <Grid container spacing={2}>
+              <Grid item xs={4}>
+                <Typography>
+                  Cash Per Day: {formatValue(cpd[currencyState].dailyAmount)}
+                </Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography>
+                  Days remaining: {cpd[currencyState].numberOfDays}
+                </Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography>
+                  Cash remaining:{' '}
+                  {formatValue(
+                    cashPerDay[currencyState].totalAmount -
+                      cpd[currencyState].totalAmount
+                  )}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Slider
+                  aria-label="CPD"
+                  defaultValue={cpd[currencyState].totalAmount}
+                  valueLabelDisplay="auto"
+                  value={sliderValue}
+                  step={0.001}
+                  //   marks
+                  min={0.01}
+                  max={1}
+                  onChange={sliderHandler}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </Container>
       </Box>
     </div>
   );
