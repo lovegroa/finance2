@@ -84,7 +84,7 @@ const TransactionsTable: FC<ChildProps> = ({
                                 : {}
                             }
                           >
-                            {formatter.format(transaction.amount)}
+                            {formatter.format(Number(transaction.amount))}
                           </TableCell>
                         </TableRow>
                       );
