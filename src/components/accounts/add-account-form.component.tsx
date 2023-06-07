@@ -26,13 +26,13 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 
 const defaultFormFields: UserType['accounts'][0] = {
-  balance: 0,
+  balance: '0',
   color: '#000000',
   createdDate: new Date().toString(),
   id: v4(),
   includeInCalculations: true,
   isPriority: false,
-  balanceLimit: 0,
+  balanceLimit: '0',
   name: '',
   accountType: 'debit',
   currency: 'USD',

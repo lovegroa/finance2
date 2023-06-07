@@ -47,7 +47,7 @@ const AddTransactionForm: React.FC<ChildProps> = ({
     name: '',
     startDate: convertDateToString(new Date()),
     endDate: convertDateToString(new Date()),
-    amount: 0,
+    amount: '0',
     transactionType: 'debit',
     frequency: 'monthly',
     accountId: primaryAccount.id,

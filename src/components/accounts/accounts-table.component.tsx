@@ -75,7 +75,7 @@ const AccountsTable: FC<ChildProps> = ({
                     }
                     align="right"
                   >
-                    {formatter.format(account.balance)}
+                    {formatter.format(Number(account.balance))}
                   </TableCell>
                   <TableCell align="center">
                     {account.includeInCalculations ? (

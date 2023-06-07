@@ -5,37 +5,19 @@ import {useAppSelector} from '../utils/hooks/hooks.utils';
 import {selectCashPerDay, selectDisplayData} from '../store/user/user.slice';
 import {generateLabels} from '../utils/general/general.utils';
 import {Fragment, useEffect, useState} from 'react';
+import TransactionsTable from '../components/homepage/transactions-table.component';
+
+const copy = (value: unknown) => {
+  return JSON.parse(JSON.stringify(value));
+};
 
 const Homepage: React.FC = () => {
   const originalDisplayData = useAppSelector(selectDisplayData);
-  const displayData = JSON.parse(
-    JSON.stringify(originalDisplayData)
-  ) as typeof originalDisplayData;
-  const targetDate = new Date('2024-04-24');
+  const targetDate = new Date('2023-07-24');
+  const displayData = copy(originalDisplayData) as typeof originalDisplayData;
   const labels: Date[] = generateLabels(targetDate);
   const cashPerDay = useAppSelector(selectCashPerDay);
-  const [sliderValue, setSliderValue] = useState<number>(0);
-
-  const [cpd, setCpd] = useState({...cashPerDay});
-  useEffect(() => {
-    setCpd({...cashPerDay});
-  }, [cashPerDay]);
-
-  displayData.forEach(currencyData => {
-    currencyData.accounts.forEach(account => {
-      if (account.priority) {
-        account.dataset.data = account.dataset.data.map((d, i) => {
-          return (
-            (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1)
-          );
-        });
-      }
-    });
-    currencyData.total[0].data = currencyData.total[0].data.map((d, i) => {
-      return (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1);
-    });
-  });
-
+  const [sliderValue, setSliderValue] = useState<number>(1);
   const defaultCurrency = displayData.length ? displayData[0].currency : null;
   const [currencyState, setCurrencyState] = useState<string | null>(
     defaultCurrency
@@ -52,6 +34,34 @@ const Homepage: React.FC = () => {
     return formatter.format(value);
   };
 
+  const [cpd, setCpd] = useState({...cashPerDay});
+  useEffect(() => {
+    setCpd({...cashPerDay});
+  }, [cashPerDay]);
+
+  useEffect(() => {
+    if (currencyState) return;
+    const defaultCurrency = displayData.length ? displayData[0].currency : null;
+    setCurrencyState(defaultCurrency);
+  }, [displayData]);
+
+  if (currencyState) {
+    displayData.forEach(currencyData => {
+      currencyData.accounts.forEach(account => {
+        if (account.priority) {
+          account.dataset.data = account.dataset.data.map((d, i) => {
+            return (
+              (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1)
+            );
+          });
+        }
+      });
+      currencyData.total[0].data = currencyData.total[0].data.map((d, i) => {
+        return (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1);
+      });
+    });
+  }
+
   function sliderHandler(event: Event, value: number | number[]) {
     if (!currencyState) return;
     if (typeof value !== 'number') return;
@@ -64,6 +74,8 @@ const Homepage: React.FC = () => {
 
     setSliderValue(Number(value));
   }
+
+  if (!currencyState) return <></>;
 
   return (
     <div className="container">
@@ -99,44 +111,44 @@ const Homepage: React.FC = () => {
               </Fragment>
             );
           })}
-          {!currencyState ? (
-            <></>
-          ) : (
-            <Grid container spacing={2}>
-              <Grid item xs={4}>
-                <Typography>
-                  Cash Per Day: {formatValue(cpd[currencyState].dailyAmount)}
-                </Typography>
-              </Grid>
-              <Grid item xs={4}>
-                <Typography>
-                  Days remaining: {cpd[currencyState].numberOfDays}
-                </Typography>
-              </Grid>
-              <Grid item xs={4}>
-                <Typography>
-                  Cash remaining:{' '}
-                  {formatValue(
-                    cashPerDay[currencyState].totalAmount -
-                      cpd[currencyState].totalAmount
-                  )}
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Slider
-                  aria-label="CPD"
-                  defaultValue={cpd[currencyState].totalAmount}
-                  valueLabelDisplay="auto"
-                  value={sliderValue}
-                  step={0.001}
-                  //   marks
-                  min={0.01}
-                  max={1}
-                  onChange={sliderHandler}
-                />
-              </Grid>
+
+          <Grid container spacing={2}>
+            <Grid item xs={4}>
+              <Typography>
+                Cash Per Day: {formatValue(cpd[currencyState].dailyAmount)}
+              </Typography>
             </Grid>
-          )}
+            <Grid item xs={4}>
+              <Typography>
+                Days remaining: {cpd[currencyState].numberOfDays}
+              </Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography>
+                Cash remaining:{' '}
+                {formatValue(
+                  cashPerDay[currencyState].totalAmount -
+                    cpd[currencyState].totalAmount
+                )}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Slider
+                aria-label="CPD"
+                defaultValue={0}
+                valueLabelDisplay="auto"
+                value={sliderValue}
+                step={0.001}
+                //   marks
+                min={0}
+                max={1}
+                onChange={sliderHandler}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TransactionsTable currencyState={currencyState} />
+            </Grid>
+          </Grid>
         </Container>
       </Box>
     </div>

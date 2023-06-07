@@ -2,6 +2,8 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {Currency} from 'firebase/analytics';
 import {User} from 'firebase/auth';
 import {
+  createCurrencyTransactions,
+  enhanceTargets,
   generateDatasets,
   generateLabels,
   hexToRgb,
@@ -162,7 +164,7 @@ type Totals = {
   totalLimit: number;
   onlyCalculatedLimit: number;
 };
-type AccountTotals = {
+export type AccountTotals = {
   currency: 'JPY' | 'USD' | 'GBP';
   debit: Totals;
   credit: Totals;
@@ -253,7 +255,7 @@ export type CashPerDay = {
 
 export const selectCashPerDay = (state: RootState): CashPerDay => {
   const displayData = selectDisplayData(state);
-  const targetDate = new Date('2024-04-24');
+  const targetDate = new Date('2023-07-24');
   const targetBalnce = 0;
   const labels: Date[] = generateLabels(targetDate);
 
@@ -274,7 +276,7 @@ export const selectDisplayData = (state: RootState) => {
   const usedCurrencies = selectUsedCurrencies(state);
   const accounts = selectAccounts(state);
   const transactions = selectTransactions(state);
-  const targetDate = new Date('2024-04-24');
+  const targetDate = new Date('2023-07-24');
   const labels: Date[] = generateLabels(targetDate);
   return usedCurrencies.map(currency => {
     const filteredAccounts = accounts.filter(
@@ -297,4 +299,57 @@ export const selectDisplayData = (state: RootState) => {
       ],
     };
   });
+};
+
+export const selectIndividualTransactions = (state: RootState) => {
+  const transactions = selectTransactions(state);
+  const accounts = selectAccounts(state);
+  const usedCurrencies = selectUsedCurrencies(state);
+
+  return createCurrencyTransactions(
+    transactions,
+    accounts,
+    usedCurrencies,
+    new Date('2023-07-24')
+  );
+};
+
+export const selectEnhancedTargets = (state: RootState) => {
+  const targets = selectTargets(state);
+  const usedCurrencies = selectUsedCurrencies(state);
+  const accounts = selectAccounts(state);
+  const accountTotals = selectAccountTotals(state);
+  const transactions = selectTransactions(state);
+
+  //   targets = [
+  //     {
+  //       _id: '1',
+  //       balanceEnd: '0',
+  //       currency: 'JPY',
+  //       dateCreated: '2020-03-03',
+  //       dateEnd: '2023-06-24',
+  //     },
+  //     {
+  //       _id: '1',
+  //       balanceEnd: '0',
+  //       currency: 'GBP',
+  //       dateCreated: '2020-03-03',
+  //       dateEnd: '2024-05-24',
+  //     },
+  //     {
+  //       _id: '1',
+  //       balanceEnd: '0',
+  //       currency: 'JPY',
+  //       dateCreated: '2020-03-03',
+  //       dateEnd: '2023-07-24',
+  //     },
+  //   ];
+
+  return enhanceTargets(
+    targets,
+    usedCurrencies,
+    accounts,
+    accountTotals,
+    transactions
+  );
 };

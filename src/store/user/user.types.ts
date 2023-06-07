@@ -23,10 +23,11 @@ export type UserType = {
 };
 
 export type Target = {
-  id: string;
-  createdDate: string;
-  targetDate: string;
-  amount: number;
+  _id: string;
+  balanceEnd: string;
+  currency: Currency;
+  dateCreated: string;
+  dateEnd: string;
 };
 
 export type Transaction = {
@@ -35,7 +36,7 @@ export type Transaction = {
   createdDate: string;
   startDate: string;
   endDate?: string;
-  amount: number;
+  amount: string;
   transactionType: 'debit' | 'credit';
   accountId: string;
   paidDates: string[];
@@ -46,8 +47,8 @@ export type Account = {
   id: string;
   name: string;
   createdDate: string;
-  balance: number;
-  balanceLimit: number;
+  balance: string;
+  balanceLimit: string;
   accountType: AccountType;
   color: string;
   isPriority: boolean;
