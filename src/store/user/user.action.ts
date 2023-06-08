@@ -53,7 +53,7 @@ export const actionSignIn =
             console.log('user sign in failed', error.message);
         }
       } else {
-        console.log('user sign in failed', error);
+        console.log('user sign in failed', JSON.stringify(error));
       }
     }
     if (!user) return;
