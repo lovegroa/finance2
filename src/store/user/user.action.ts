@@ -50,7 +50,7 @@ export const actionSignIn =
             alert('User not found');
             break;
           default:
-            console.log('user sign in failed', error.message);
+            console.log('user sign in failed', JSON.stringify(error));
         }
       } else {
         console.log('user sign in failed', JSON.stringify(error));
@@ -132,10 +132,10 @@ export const actionGoogleSignIn = () => async (appDispatch: AppDispatch) => {
           alert('User not found');
           break;
         default:
-          console.log('user sign in failed', error.message);
+          console.log('user sign in failed', JSON.stringify(error));
       }
     } else {
-      console.log('user sign in failed', error);
+      console.log('user sign in failed', JSON.stringify(error));
     }
   }
   if (!user) return;
