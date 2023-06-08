@@ -26,3 +26,9 @@
   font-size: 20px;
   scroll-snap-align: start;
 }
+
+#modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

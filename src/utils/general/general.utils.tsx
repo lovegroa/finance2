@@ -251,6 +251,7 @@ export type EnhancedTarget = {
   name: string;
   totalCredit: number;
   totalDebit: number;
+  transactions: IndividualTransaction[];
 };
 
 export type EnhancedTargets = {
@@ -307,6 +308,7 @@ export const enhanceTargets = (
       let dateBegin = new Date();
       let totalCredit = 0;
       let totalDebit = 0;
+      let individualTransactions: IndividualTransaction[] = [];
 
       if (!i) {
         balanceBegin = accountTotals.reduce((acc, currencyTotal) => {
@@ -314,31 +316,32 @@ export const enhanceTargets = (
           return (acc = currencyTotal.total.onlyCalculated);
         }, 0);
 
-        currencyTransactions[currency]
-          .filter(({date}) => new Date(date) <= dateEnd)
-          .forEach(transaction => {
-            if (transaction.transactionType === 'credit') {
-              totalCredit += Number(transaction.amount);
-            } else {
-              totalDebit += Number(transaction.amount);
-            }
-          });
+        individualTransactions = currencyTransactions[currency].filter(
+          ({date}) => new Date(date) <= dateEnd
+        );
+
+        individualTransactions.forEach(transaction => {
+          if (transaction.transactionType === 'credit') {
+            totalCredit += Number(transaction.amount);
+          } else {
+            totalDebit += Number(transaction.amount);
+          }
+        });
       } else {
         balanceBegin = Number(currencyTargets[i - 1].balanceEnd);
         dateBegin = new Date(currencyTargets[i - 1].dateEnd);
         dateBegin.setDate(dateBegin.getDate() + 1);
 
-        currencyTransactions[currency]
-          .filter(
-            ({date}) => new Date(date) >= dateBegin && new Date(date) <= dateEnd
-          )
-          .forEach(transaction => {
-            if (transaction.transactionType === 'credit') {
-              totalCredit += Number(transaction.amount);
-            } else {
-              totalDebit += Number(transaction.amount);
-            }
-          });
+        individualTransactions = currencyTransactions[currency].filter(
+          ({date}) => new Date(date) >= dateBegin && new Date(date) <= dateEnd
+        );
+        individualTransactions.forEach(transaction => {
+          if (transaction.transactionType === 'credit') {
+            totalCredit += Number(transaction.amount);
+          } else {
+            totalDebit += Number(transaction.amount);
+          }
+        });
       }
 
       // Get the duration of the target in days (inclusive)
@@ -355,39 +358,38 @@ export const enhanceTargets = (
           let accountBalanceBegin = 0;
           let accountTotalCredit = 0;
           let accountTotalDebit = 0;
+          let accountTransactions: IndividualTransaction[] = [];
 
           if (!i) {
             accountBalanceBegin = Number(account.balance);
-            currencyTransactions[currency]
-              .filter(
-                ({date, accountId}) =>
-                  new Date(date) <= dateEnd && accountId === account.id
-              )
-              .forEach(transaction => {
-                if (transaction.transactionType === 'credit') {
-                  accountTotalCredit += transaction.amount;
-                } else {
-                  accountTotalDebit += transaction.amount;
-                }
-              });
+            accountTransactions = currencyTransactions[currency].filter(
+              ({date, accountId}) =>
+                new Date(date) <= dateEnd && accountId === account.id
+            );
+            accountTransactions.forEach(transaction => {
+              if (transaction.transactionType === 'credit') {
+                accountTotalCredit += transaction.amount;
+              } else {
+                accountTotalDebit += transaction.amount;
+              }
+            });
           } else {
             // we need to find in the result the last value for this account
             accountBalanceBegin =
               result[result.length - 1].accounts[i2].balanceEnd;
-            currencyTransactions[currency]
-              .filter(
-                ({date, accountId}) =>
-                  new Date(date) >= dateBegin &&
-                  new Date(date) <= dateEnd &&
-                  accountId === account.id
-              )
-              .forEach(transaction => {
-                if (transaction.transactionType === 'credit') {
-                  accountTotalCredit += transaction.amount;
-                } else {
-                  accountTotalDebit += transaction.amount;
-                }
-              });
+            accountTransactions = currencyTransactions[currency].filter(
+              ({date, accountId}) =>
+                new Date(date) >= dateBegin &&
+                new Date(date) <= dateEnd &&
+                accountId === account.id
+            );
+            accountTransactions.forEach(transaction => {
+              if (transaction.transactionType === 'credit') {
+                accountTotalCredit += transaction.amount;
+              } else {
+                accountTotalDebit += transaction.amount;
+              }
+            });
           }
 
           const accountCashPerDay = account.isPriority ? cashPerDay : 0;
@@ -408,6 +410,7 @@ export const enhanceTargets = (
             name: account.name,
             totalCredit: accountTotalCredit,
             totalDebit: accountTotalDebit,
+            transactions: accountTransactions,
           };
         });
       result.push({
@@ -424,6 +427,7 @@ export const enhanceTargets = (
           name: 'Total',
           totalCredit,
           totalDebit,
+          transactions: individualTransactions,
         },
         accounts: accountsArray, //TODO
       });
