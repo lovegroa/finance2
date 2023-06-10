@@ -14,12 +14,22 @@ export const convertDateToString = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-export const generateLabels = (targetDate: Date) => {
-  const today = new Date(convertDateToString(new Date()));
+export const generateLabels = (dateEnd: Date, dateBegin: Date) => {
   const labels = [];
-  for (let i = today; i <= targetDate; i.setDate(i.getDate() + 1)) {
+  const dateBeginCopy = new Date(dateBegin); // Make a copy of dateBegin
+  const dateEndCopy = new Date(dateEnd); // Make a copy of dateEnd
+
+  // Reset the time of dateBeginCopy to 00:00:00 to avoid issues with time comparison
+  dateBeginCopy.setHours(0, 0, 0, 0);
+
+  // Reset the time of dateEndCopy to 23:59:59 to include the entire date
+  dateEndCopy.setHours(23, 59, 59, 999);
+
+  // Start iterating from dateBeginCopy until we reach dateEndCopy
+  for (let i = dateBeginCopy; i <= dateEndCopy; i.setDate(i.getDate() + 1)) {
     labels.push(new Date(i));
   }
+
   return labels;
 };
 
@@ -252,6 +262,7 @@ export type EnhancedTarget = {
   totalCredit: number;
   totalDebit: number;
   transactions: IndividualTransaction[];
+  dataset: number[];
 };
 
 export type EnhancedTargets = {
@@ -259,6 +270,30 @@ export type EnhancedTargets = {
   currency: Currency;
   total: EnhancedTarget;
   accounts: EnhancedTarget[];
+};
+
+type TotalTransactions = {
+  totalCredit: number;
+  totalDebit: number;
+};
+
+const totalTransactions = (
+  transactions: IndividualTransaction[]
+): TotalTransactions => {
+  return transactions.reduce<TotalTransactions>(
+    (acc, transaction) => {
+      if (transaction.transactionType === 'credit') {
+        acc.totalCredit += Number(transaction.amount);
+      } else {
+        acc.totalDebit += Number(transaction.amount);
+      }
+      return acc;
+    },
+    {
+      totalDebit: 0,
+      totalCredit: 0,
+    }
+  );
 };
 
 export const enhanceTargets = (
@@ -271,7 +306,6 @@ export const enhanceTargets = (
   const result: EnhancedTargets[] = [];
 
   //remove all targets that have expired
-
   const validTargets = targets.filter(
     target => new Date(target.dateEnd) >= new Date()
   );
@@ -281,6 +315,7 @@ export const enhanceTargets = (
     return acc;
   }, new Date());
 
+  //generates all the transactions for all currencies
   const currencyTransactions = createCurrencyTransactions(
     transactions,
     accounts,
@@ -288,9 +323,140 @@ export const enhanceTargets = (
     finalDateEnd
   );
 
-  //   console.log(currencyTransactions);
+  const calc = (
+    currencyIndex: number,
+    currencyTransactions: CurrencyTransactions,
+    currency: Currency,
+    dateEnd: Date,
+    currencyTargets: Target[],
+    balanceEnd: number,
+    name: string,
+    accountTotals: AccountTotals[],
+    result: EnhancedTargets[],
+    accountInfo?: {
+      accountIndex: number;
+      accountId: string;
+      isPriority: boolean;
+      cashPerDay: number;
+      balance: number;
+    }
+  ) => {
+    let balanceBegin = 0;
+    let transactions: IndividualTransaction[] = [];
+    let dateBegin = new Date();
 
-  //loop though targets by currency
+    if (!currencyIndex) {
+      if (accountInfo) {
+        balanceBegin = Number(accountInfo.balance);
+      } else {
+        balanceBegin = accountTotals.reduce((acc, currencyTotal) => {
+          if (currencyTotal.currency !== currency) return acc;
+          return (acc = currencyTotal.total.onlyCalculated);
+        }, 0);
+      }
+
+      transactions = currencyTransactions[currency].filter(
+        ({date}) => new Date(date) <= dateEnd
+      );
+    } else {
+      if (accountInfo) {
+        balanceBegin =
+          result[result.length - 1].accounts[accountInfo.accountIndex]
+            .balanceEnd;
+      } else {
+        balanceBegin = Number(currencyTargets[currencyIndex - 1].balanceEnd);
+      }
+      dateBegin = new Date(currencyTargets[currencyIndex - 1].dateEnd);
+      dateBegin.setDate(dateBegin.getDate() + 1);
+      transactions = currencyTransactions[currency].filter(
+        ({date}) => new Date(date) >= dateBegin && new Date(date) <= dateEnd
+      );
+    }
+
+    if (accountInfo) {
+      transactions = transactions.filter(
+        transaction => transaction.accountId === accountInfo.accountId
+      );
+    }
+
+    // Get the duration of the target in days (inclusive)
+    const dateDifference = new Date(dateEnd).getTime() - dateBegin.getTime();
+    const days = Math.ceil(dateDifference / (1000 * 3600 * 24)) + 1;
+
+    const {totalCredit, totalDebit} = totalTransactions(transactions);
+
+    const dates = generateLabels(dateEnd, dateBegin);
+
+    let balanceDisposable = 0;
+    let cashPerDay = 0;
+    if (accountInfo) {
+      cashPerDay = accountInfo.isPriority ? accountInfo.cashPerDay : 0;
+      balanceDisposable = cashPerDay * days;
+      balanceEnd = balanceBegin + totalCredit - totalDebit - balanceDisposable;
+      //   debugger;
+    } else {
+      balanceDisposable = balanceBegin + totalCredit - totalDebit - balanceEnd;
+      cashPerDay = balanceDisposable / days;
+    }
+
+    let balanceRunning = balanceBegin;
+    const dataset = dates.map((date, index) => {
+      const amount = transactions
+        .filter(transaction => {
+          if (!index) {
+            // if (currencyIndex === 1) {
+            //   debugger;
+            // }
+            //on the first date, it looks to see if anything older has not been paid yet
+            return (
+              new Date(transaction.date).getTime() <=
+              new Date(convertDateToString(date)).getTime()
+            );
+          } else {
+            return transaction.date === convertDateToString(date);
+          }
+        })
+        .reduce((acc, transaction) => {
+          if (transaction.transactionType === 'debit') {
+            acc += Number(transaction.amount);
+          } else {
+            acc -= Number(transaction.amount);
+          }
+          return acc;
+        }, 0);
+      if (!accountInfo) {
+        console.log({
+          aaa: index,
+          amount,
+          cashPerDay,
+          balanceRunning,
+          balanceBegin,
+        });
+      }
+
+      balanceRunning -= amount + cashPerDay;
+      return balanceRunning;
+    });
+
+    console.log({
+      dataset,
+    });
+
+    return {
+      balanceBegin,
+      balanceDisposable,
+      balanceEnd,
+      cashPerDay,
+      dateBegin,
+      dateEnd,
+      days,
+      name,
+      totalCredit,
+      totalDebit,
+      transactions,
+      dataset,
+    };
+  };
 
   usedCurrencies.forEach(currency => {
     const currencyTargets = validTargets
@@ -302,140 +468,50 @@ export const enhanceTargets = (
 
     currencyTargets.forEach((currencyTarget, i) => {
       const {_id, currency} = currencyTarget;
-      const dateEnd = new Date(currencyTarget.dateEnd);
       const balanceEnd = Number(currencyTarget.balanceEnd);
-      let balanceBegin = 0;
-      let dateBegin = new Date();
-      let totalCredit = 0;
-      let totalDebit = 0;
-      let individualTransactions: IndividualTransaction[] = [];
-
-      if (!i) {
-        balanceBegin = accountTotals.reduce((acc, currencyTotal) => {
-          if (currencyTotal.currency !== currency) return acc;
-          return (acc = currencyTotal.total.onlyCalculated);
-        }, 0);
-
-        individualTransactions = currencyTransactions[currency].filter(
-          ({date}) => new Date(date) <= dateEnd
-        );
-
-        individualTransactions.forEach(transaction => {
-          if (transaction.transactionType === 'credit') {
-            totalCredit += Number(transaction.amount);
-          } else {
-            totalDebit += Number(transaction.amount);
-          }
-        });
-      } else {
-        balanceBegin = Number(currencyTargets[i - 1].balanceEnd);
-        dateBegin = new Date(currencyTargets[i - 1].dateEnd);
-        dateBegin.setDate(dateBegin.getDate() + 1);
-
-        individualTransactions = currencyTransactions[currency].filter(
-          ({date}) => new Date(date) >= dateBegin && new Date(date) <= dateEnd
-        );
-        individualTransactions.forEach(transaction => {
-          if (transaction.transactionType === 'credit') {
-            totalCredit += Number(transaction.amount);
-          } else {
-            totalDebit += Number(transaction.amount);
-          }
-        });
-      }
-
-      // Get the duration of the target in days (inclusive)
-      const timeDifference = new Date(dateEnd).getTime() - dateBegin.getTime();
-      const days = Math.ceil(timeDifference / (1000 * 3600 * 24)) + 1;
-
-      const balanceDisposable =
-        balanceBegin + totalCredit - totalDebit - balanceEnd;
-      const cashPerDay = balanceDisposable / days;
+      const dateEnd = new Date(currencyTarget.dateEnd);
+      const total = calc(
+        i,
+        currencyTransactions,
+        currency,
+        dateEnd,
+        currencyTargets,
+        balanceEnd,
+        'Total',
+        accountTotals,
+        result
+      );
 
       const accountsArray: EnhancedTarget[] = accounts
         .filter(account => account.currency === currency)
-        .map((account, i2) => {
-          let accountBalanceBegin = 0;
-          let accountTotalCredit = 0;
-          let accountTotalDebit = 0;
-          let accountTransactions: IndividualTransaction[] = [];
-
-          if (!i) {
-            accountBalanceBegin = Number(account.balance);
-            accountTransactions = currencyTransactions[currency].filter(
-              ({date, accountId}) =>
-                new Date(date) <= dateEnd && accountId === account.id
-            );
-            accountTransactions.forEach(transaction => {
-              if (transaction.transactionType === 'credit') {
-                accountTotalCredit += transaction.amount;
-              } else {
-                accountTotalDebit += transaction.amount;
-              }
-            });
-          } else {
-            // we need to find in the result the last value for this account
-            accountBalanceBegin =
-              result[result.length - 1].accounts[i2].balanceEnd;
-            accountTransactions = currencyTransactions[currency].filter(
-              ({date, accountId}) =>
-                new Date(date) >= dateBegin &&
-                new Date(date) <= dateEnd &&
-                accountId === account.id
-            );
-            accountTransactions.forEach(transaction => {
-              if (transaction.transactionType === 'credit') {
-                accountTotalCredit += transaction.amount;
-              } else {
-                accountTotalDebit += transaction.amount;
-              }
-            });
-          }
-
-          const accountCashPerDay = account.isPriority ? cashPerDay : 0;
-          const accountBalanceEnd =
-            accountBalanceBegin +
-            accountTotalCredit -
-            accountTotalDebit -
-            accountCashPerDay * days;
-
-          return {
-            balanceBegin: accountBalanceBegin,
-            balanceDisposable: accountCashPerDay * days,
-            balanceEnd: accountBalanceEnd,
-            cashPerDay: accountCashPerDay,
-            dateBegin,
-            dateEnd: dateEnd,
-            days,
-            name: account.name,
-            totalCredit: accountTotalCredit,
-            totalDebit: accountTotalDebit,
-            transactions: accountTransactions,
-          };
+        .map(({name, id, isPriority, balance}, i2) => {
+          return calc(
+            i,
+            currencyTransactions,
+            currency,
+            dateEnd,
+            currencyTargets,
+            balanceEnd,
+            name,
+            accountTotals,
+            result,
+            {
+              accountIndex: i2,
+              accountId: id,
+              isPriority: isPriority,
+              cashPerDay: total.cashPerDay,
+              balance: Number(balance),
+            }
+          );
         });
       result.push({
         _id,
         currency,
-        total: {
-          balanceBegin,
-          balanceDisposable,
-          balanceEnd,
-          cashPerDay,
-          dateBegin,
-          dateEnd: new Date(dateEnd),
-          days,
-          name: 'Total',
-          totalCredit,
-          totalDebit,
-          transactions: individualTransactions,
-        },
-        accounts: accountsArray, //TODO
+        total,
+        accounts: accountsArray,
       });
     });
   });
 
-  //
-  console.log(JSON.stringify(result, null, 2));
-  //   console.log(result);
   return result;
 };

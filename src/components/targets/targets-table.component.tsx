@@ -1,4 +1,4 @@
-import {FC, useState} from 'react';
+import {FC, useEffect, useState} from 'react';
 import {
   selectEnhancedTargets,
   selectTargets,
@@ -42,7 +42,7 @@ const TargetsTable: FC<ChildProps> = ({
         currency={currency}
       />
       <TableContainer>
-        <Table aria-label="targets table">
+        <Table aria-label="targets table" stickyHeader={true}>
           <TableHead>
             <TableRow>
               <TableCell>
@@ -90,6 +90,7 @@ const TargetsTable: FC<ChildProps> = ({
                   <>
                     <TableRow
                       key={index}
+                      selected={expandTable === index}
                       onClick={() =>
                         expandTable === index
                           ? setExpandTable(undefined)

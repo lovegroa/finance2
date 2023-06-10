@@ -257,7 +257,7 @@ export const selectCashPerDay = (state: RootState): CashPerDay => {
   const displayData = selectDisplayData(state);
   const targetDate = new Date('2023-07-24');
   const targetBalnce = 0;
-  const labels: Date[] = generateLabels(targetDate);
+  const labels: Date[] = generateLabels(targetDate, new Date());
 
   return displayData.reduce<CashPerDay>((acc, currency) => {
     const totalData = currency.total[0].data;
@@ -276,8 +276,9 @@ export const selectDisplayData = (state: RootState) => {
   const usedCurrencies = selectUsedCurrencies(state);
   const accounts = selectAccounts(state);
   const transactions = selectTransactions(state);
+  const targets = selectTargets(state);
   const targetDate = new Date('2023-07-24');
-  const labels: Date[] = generateLabels(targetDate);
+  const labels: Date[] = generateLabels(targetDate, new Date());
   return usedCurrencies.map(currency => {
     const filteredAccounts = accounts.filter(
       account => account.currency === currency

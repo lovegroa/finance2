@@ -6,18 +6,24 @@ import {Container} from '@mui/material';
 import TargetsTable from '../components/targets/targets-table.component';
 import AddTargetForm from '../components/targets/add-target-form.component';
 import UpdateTargetForm from '../components/targets/update-target-form.component';
+import {useAppSelector} from '../utils/hooks/hooks.utils';
+import {selectEnhancedTargets} from '../store/user/user.slice';
 
 const Targets: React.FC = () => {
   const [showAddTargetForm, setShowAddTargetForm] = useState(false);
   const [currenTarget, setCurrentTarget] = useState<UserType['targets'][0]>();
+  const enhancedTargets = useAppSelector(selectEnhancedTargets);
 
   return (
     <div>
       <Navigation></Navigation>
       <br></br>
-      <Container component="main" maxWidth="md">
+      <Container component="main" maxWidth="lg">
         {showAddTargetForm ? (
-          <AddTargetForm setShowAddTargetForm={setShowAddTargetForm} />
+          <AddTargetForm
+            setShowAddTargetForm={setShowAddTargetForm}
+            enhancedTargets={enhancedTargets}
+          />
         ) : currenTarget ? (
           <UpdateTargetForm
             currentTarget={currenTarget}

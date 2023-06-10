@@ -1,8 +1,8 @@
-import {ChangeEvent, FormEvent, useState} from 'react';
+import {ChangeEvent, FormEvent, useEffect, useState} from 'react';
 import {actionUpdateUserData} from '../../store/user/user.action';
 import {selectUserAuth, selectUserData} from '../../store/user/user.slice';
 
-import {Target, UserType} from '../../store/user/user.types';
+import {Currency, Target, UserType} from '../../store/user/user.types';
 import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
 import {v4} from 'uuid';
 import {
@@ -21,35 +21,91 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import {
+  EnhancedTargets,
+  enhanceTargets,
+} from '../../utils/general/general.utils';
 
 const defaultFormFields: Target = {
   _id: v4(),
   balanceEnd: '0',
-  currency: 'USD',
+  currency: 'JPY',
   dateCreated: new Date().toString(),
-  dateEnd: new Date().toString(),
+  dateEnd: new Date().toISOString().split('T')[0],
 };
 
 type ChildProps = {
   setShowAddTargetForm: React.Dispatch<React.SetStateAction<boolean>>;
+  enhancedTargets: EnhancedTargets[];
 };
 
-const AddTargetForm: React.FC<ChildProps> = ({setShowAddTargetForm}) => {
+//if end date is defined, find the date in the enhanced Targets
+
+const AddTargetForm: React.FC<ChildProps> = ({
+  setShowAddTargetForm,
+  enhancedTargets,
+}) => {
   const userData = useAppSelector(selectUserData);
   const userAuth = useAppSelector(selectUserAuth);
   const dispatch = useAppDispatch();
   const [formFields, setFormFields] = useState(defaultFormFields);
   const {balanceEnd, currency, dateEnd} = formFields;
 
+  console.log(enhancedTargets);
+
+  const findBalance = (dateEnd: string | undefined, currency: Currency) => {
+    if (!dateEnd) return '0';
+    const target = enhancedTargets
+      .filter(target => {
+        return target.currency === currency;
+      })
+      .filter(target => {
+        return (
+          target.total.dateBegin.toISOString().split('T')[0] <=
+            new Date(dateEnd).toISOString().split('T')[0] &&
+          target.total.dateEnd.toISOString().split('T')[0] >=
+            new Date(dateEnd).toISOString().split('T')[0]
+        );
+      })[0];
+
+    //this filter is not working correctly not sure why.
+
+    //this should return the right target if it exists
+    console.log(dateEnd, currency);
+    console.log(target);
+    if (!target) return '0';
+
+    const {dateBegin, dataset} = target.total;
+
+    const dateDifference = new Date(dateEnd).getTime() - dateBegin.getTime();
+    const days = Math.ceil(dateDifference / (1000 * 3600 * 24)) + 1;
+    return Math.round(dataset[days - 1]).toString();
+  };
+
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const {name, value} = event.target;
-
-    setFormFields({...formFields, [name]: value});
+    if (name === 'dateEnd') {
+      setFormFields({
+        ...formFields,
+        [name]: value,
+        balanceEnd: findBalance(value, currency),
+      });
+    } else {
+      setFormFields({...formFields, [name]: value});
+    }
   };
   const handleSelectChange = (event: SelectChangeEvent<string>) => {
     const {name, value} = event.target;
 
-    setFormFields({...formFields, [name]: value});
+    if (name === 'currency') {
+      setFormFields({
+        ...formFields,
+        [name]: value as Currency,
+        balanceEnd: findBalance(dateEnd, value as Currency),
+      });
+    } else {
+      setFormFields({...formFields, [name]: value});
+    }
   };
 
   const resetFormFields = () => {

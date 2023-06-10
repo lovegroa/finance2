@@ -15,7 +15,7 @@ const Homepage: React.FC = () => {
   const originalDisplayData = useAppSelector(selectDisplayData);
   const targetDate = new Date('2023-07-24');
   const displayData = copy(originalDisplayData) as typeof originalDisplayData;
-  const labels: Date[] = generateLabels(targetDate);
+  const labels: Date[] = generateLabels(targetDate, new Date());
   const cashPerDay = useAppSelector(selectCashPerDay);
   const [sliderValue, setSliderValue] = useState<number>(1);
   const defaultCurrency = displayData.length ? displayData[0].currency : null;

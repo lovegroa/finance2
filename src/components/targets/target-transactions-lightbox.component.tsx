@@ -38,12 +38,14 @@ const TargetTransactionsLightbox: React.FC<ChildProps> = ({
       onClose={() => setTransactions(undefined)}
       aria-labelledby="modal-modal-title"
       aria-describedby="modal-modal-description"
+      sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}
     >
       <Box
         sx={{
           backgroundColor: 'white',
           padding: '30px',
           maxHeight: '80vh',
+          minHeight: '40vh ',
           overflow: 'scroll',
         }}
       >
