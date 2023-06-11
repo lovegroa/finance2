@@ -1,7 +1,9 @@
-import {FC, useEffect, useState} from 'react';
+import {FC, useState} from 'react';
 import {
+  selectCurrency,
   selectEnhancedTargets,
   selectTargets,
+  selectformatter,
 } from '../../store/user/user.slice';
 import {useAppSelector} from '../../utils/hooks/hooks.utils';
 import {
@@ -13,7 +15,7 @@ import {
   TableCell,
   Button,
 } from '@mui/material';
-import {Currency, UserType} from '../../store/user/user.types';
+import {UserType} from '../../store/user/user.types';
 import {IndividualTransaction} from '../../utils/general/general.utils';
 import TargetTransactionsLightbox from './target-transactions-lightbox.component';
 
@@ -30,9 +32,10 @@ const TargetsTable: FC<ChildProps> = ({
 }) => {
   const enhancedTargets = useAppSelector(selectEnhancedTargets);
   const targets = useAppSelector(selectTargets);
+  const currency = useAppSelector(selectCurrency);
+  const {format} = useAppSelector(selectformatter);
   const [expandTable, setExpandTable] = useState<Number>();
   const [transactions, setTransactions] = useState<IndividualTransaction[]>();
-  const [currency, setCurrency] = useState<Currency>('GBP');
 
   return (
     <>
@@ -78,121 +81,95 @@ const TargetsTable: FC<ChildProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...enhancedTargets].map(
-              ({total, accounts, currency, _id}, index) => {
-                const formatter = new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: currency,
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                });
-                return (
-                  <>
-                    <TableRow
-                      key={index}
-                      selected={expandTable === index}
-                      onClick={() =>
-                        expandTable === index
-                          ? setExpandTable(undefined)
-                          : setExpandTable(index)
-                      }
+            {[...enhancedTargets].map(({total, accounts, _id}, index) => {
+              return (
+                <>
+                  <TableRow
+                    key={index}
+                    selected={expandTable === index}
+                    onClick={() =>
+                      expandTable === index
+                        ? setExpandTable(undefined)
+                        : setExpandTable(index)
+                    }
+                  >
+                    <TableCell>
+                      {total.dateBegin.toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>{total.dateEnd.toLocaleDateString()}</TableCell>
+                    <TableCell
+                      onClick={() => {
+                        setCurrentTarget(
+                          targets.filter(target => target._id === _id)[0]
+                        );
+                      }}
                     >
-                      <TableCell>
-                        {total.dateBegin.toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {total.dateEnd.toLocaleDateString()}
-                      </TableCell>
-                      <TableCell
-                        onClick={() => {
-                          setCurrentTarget(
-                            targets.filter(target => target._id === _id)[0]
-                          );
-                        }}
-                      >
-                        {total.name}
-                      </TableCell>
-                      <TableCell>
-                        {formatter.format(total.balanceBegin)}
-                      </TableCell>
-                      <TableCell>
-                        {formatter.format(total.balanceEnd)}
-                      </TableCell>
-                      <TableCell>
-                        {formatter.format(total.cashPerDay)}
-                      </TableCell>
-                      <TableCell
-                        onClick={() => {
-                          setTransactions(total.transactions);
-                          setCurrency(currency);
-                        }}
-                      >
-                        {formatter.format(total.totalCredit)}
-                      </TableCell>
-                      <TableCell
-                        onClick={() => {
-                          setTransactions(total.transactions);
-                          setCurrency(currency);
-                        }}
-                      >
-                        {formatter.format(total.totalDebit)}
-                      </TableCell>
-                      <TableCell>
-                        {formatter.format(total.balanceDisposable)}
-                      </TableCell>
-                      <TableCell>{total.days}</TableCell>
-                    </TableRow>
-                    {expandTable === index
-                      ? accounts.map((account, index) => {
-                          return (
-                            <TableRow
-                              key={index}
-                              // onClick={() => setCurrentTarget(target)}
+                      {total.name}
+                    </TableCell>
+                    <TableCell>{format(total.balanceBegin)}</TableCell>
+                    <TableCell>{format(total.balanceEnd)}</TableCell>
+                    <TableCell>{format(total.cashPerDay)}</TableCell>
+                    <TableCell
+                      onClick={() => {
+                        setTransactions(total.transactions);
+                      }}
+                    >
+                      {format(total.totalCredit)}
+                    </TableCell>
+                    <TableCell
+                      onClick={() => {
+                        setTransactions(total.transactions);
+                      }}
+                    >
+                      {format(total.totalDebit)}
+                    </TableCell>
+                    <TableCell>{format(total.balanceDisposable)}</TableCell>
+                    <TableCell>{total.days}</TableCell>
+                  </TableRow>
+                  {expandTable === index
+                    ? accounts.map((account, index) => {
+                        return (
+                          <TableRow
+                            key={index}
+                            // onClick={() => setCurrentTarget(target)}
+                          >
+                            <TableCell>
+                              {/* {account.dateBegin.toLocaleDateString()} */}
+                            </TableCell>
+                            <TableCell>
+                              {/* {account.dateEnd.toLocaleDateString()} */}
+                            </TableCell>
+                            <TableCell>{account.name}</TableCell>
+                            <TableCell>
+                              {format(account.balanceBegin)}
+                            </TableCell>
+                            <TableCell>{format(account.balanceEnd)}</TableCell>
+                            <TableCell>{format(account.cashPerDay)}</TableCell>
+                            <TableCell
+                              onClick={() => {
+                                setTransactions(account.transactions);
+                              }}
                             >
-                              <TableCell>
-                                {/* {account.dateBegin.toLocaleDateString()} */}
-                              </TableCell>
-                              <TableCell>
-                                {/* {account.dateEnd.toLocaleDateString()} */}
-                              </TableCell>
-                              <TableCell>{account.name}</TableCell>
-                              <TableCell>
-                                {formatter.format(account.balanceBegin)}
-                              </TableCell>
-                              <TableCell>
-                                {formatter.format(account.balanceEnd)}
-                              </TableCell>
-                              <TableCell>
-                                {formatter.format(account.cashPerDay)}
-                              </TableCell>
-                              <TableCell
-                                onClick={() => {
-                                  setTransactions(account.transactions);
-                                  setCurrency(currency);
-                                }}
-                              >
-                                {formatter.format(account.totalCredit)}
-                              </TableCell>
-                              <TableCell
-                                onClick={() => {
-                                  setTransactions(account.transactions);
-                                  setCurrency(currency);
-                                }}
-                              >
-                                {formatter.format(account.totalDebit)}
-                              </TableCell>
-                              <TableCell>
-                                {formatter.format(account.balanceDisposable)}
-                              </TableCell>
-                              <TableCell>{account.days}</TableCell>
-                            </TableRow>
-                          );
-                        })
-                      : ''}
-                  </>
-                );
-              }
-            )}
+                              {format(account.totalCredit)}
+                            </TableCell>
+                            <TableCell
+                              onClick={() => {
+                                setTransactions(account.transactions);
+                              }}
+                            >
+                              {format(account.totalDebit)}
+                            </TableCell>
+                            <TableCell>
+                              {format(account.balanceDisposable)}
+                            </TableCell>
+                            <TableCell>{account.days}</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    : ''}
+                </>
+              );
+            })}
             <TableRow>
               <TableCell align="center" colSpan={4}>
                 <Button

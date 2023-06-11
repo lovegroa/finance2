@@ -1,8 +1,12 @@
-import {ChangeEvent, FormEvent, useEffect, useState} from 'react';
+import {ChangeEvent, FormEvent, useState} from 'react';
 import {actionUpdateUserData} from '../../store/user/user.action';
-import {selectUserAuth, selectUserData} from '../../store/user/user.slice';
+import {
+  selectCurrency,
+  selectUserAuth,
+  selectUserData,
+} from '../../store/user/user.slice';
 
-import {Currency, Target, UserType} from '../../store/user/user.types';
+import {Target, UserType} from '../../store/user/user.types';
 import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
 import {v4} from 'uuid';
 import {
@@ -10,29 +14,13 @@ import {
   Button,
   Container,
   CssBaseline,
-  FormControl,
   Grid,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   TextField,
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import {
-  EnhancedTargets,
-  enhanceTargets,
-} from '../../utils/general/general.utils';
-
-const defaultFormFields: Target = {
-  _id: v4(),
-  balanceEnd: '0',
-  currency: 'JPY',
-  dateCreated: new Date().toString(),
-  dateEnd: new Date().toISOString().split('T')[0],
-};
+import {EnhancedTargets} from '../../utils/general/general.utils';
 
 type ChildProps = {
   setShowAddTargetForm: React.Dispatch<React.SetStateAction<boolean>>;
@@ -47,32 +35,32 @@ const AddTargetForm: React.FC<ChildProps> = ({
 }) => {
   const userData = useAppSelector(selectUserData);
   const userAuth = useAppSelector(selectUserAuth);
+  const globalCurrency = useAppSelector(selectCurrency);
   const dispatch = useAppDispatch();
+
+  const defaultFormFields: Target = {
+    _id: v4(),
+    balanceEnd: '0',
+    currency: globalCurrency,
+    dateCreated: new Date().toString(),
+    dateEnd: new Date().toISOString().split('T')[0],
+  };
   const [formFields, setFormFields] = useState(defaultFormFields);
-  const {balanceEnd, currency, dateEnd} = formFields;
+  const {balanceEnd, dateEnd} = formFields;
 
-  console.log(enhancedTargets);
-
-  const findBalance = (dateEnd: string | undefined, currency: Currency) => {
+  const findBalance = (dateEnd: string | undefined) => {
     if (!dateEnd) return '0';
-    const target = enhancedTargets
-      .filter(target => {
-        return target.currency === currency;
-      })
-      .filter(target => {
-        return (
-          target.total.dateBegin.toISOString().split('T')[0] <=
-            new Date(dateEnd).toISOString().split('T')[0] &&
-          target.total.dateEnd.toISOString().split('T')[0] >=
-            new Date(dateEnd).toISOString().split('T')[0]
-        );
-      })[0];
-
-    //this filter is not working correctly not sure why.
+    const target = enhancedTargets.filter(target => {
+      return (
+        target.total.dateBegin.toISOString().split('T')[0] <=
+          new Date(dateEnd).toISOString().split('T')[0] &&
+        target.total.dateEnd.toISOString().split('T')[0] >=
+          new Date(dateEnd).toISOString().split('T')[0]
+      );
+    })[0];
 
     //this should return the right target if it exists
-    console.log(dateEnd, currency);
-    console.log(target);
+
     if (!target) return '0';
 
     const {dateBegin, dataset} = target.total;
@@ -88,20 +76,7 @@ const AddTargetForm: React.FC<ChildProps> = ({
       setFormFields({
         ...formFields,
         [name]: value,
-        balanceEnd: findBalance(value, currency),
-      });
-    } else {
-      setFormFields({...formFields, [name]: value});
-    }
-  };
-  const handleSelectChange = (event: SelectChangeEvent<string>) => {
-    const {name, value} = event.target;
-
-    if (name === 'currency') {
-      setFormFields({
-        ...formFields,
-        [name]: value as Currency,
-        balanceEnd: findBalance(dateEnd, value as Currency),
+        balanceEnd: findBalance(value),
       });
     } else {
       setFormFields({...formFields, [name]: value});
@@ -144,23 +119,6 @@ const AddTargetForm: React.FC<ChildProps> = ({
         </Grid>
         <Box component="form" noValidate onSubmit={addTarget} sx={{mt: 3}}>
           <Grid container spacing={2}>
-            <Grid item xs={2.5}>
-              <FormControl fullWidth>
-                <InputLabel id="currency">CCY</InputLabel>
-                <Select
-                  labelId="currency"
-                  id="currency"
-                  value={currency}
-                  label="Currency"
-                  onChange={handleSelectChange}
-                  name="currency"
-                >
-                  <MenuItem value={'USD'}>$</MenuItem>
-                  <MenuItem value={'GBP'}>£</MenuItem>
-                  <MenuItem value={'JPY'}>¥</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
             <Grid item xs={4.75}>
               <TextField
                 autoComplete="balanceEnd"

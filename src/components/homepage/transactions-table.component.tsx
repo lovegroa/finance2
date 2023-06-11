@@ -9,37 +9,37 @@ import {
 import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
 import {
   selectAccounts,
-  selectIndividualTransactions,
+  selectEnhancedTargets,
   selectUserAuth,
   selectUserData,
+  selectformatter,
 } from '../../store/user/user.slice';
 import {UserType} from '../../store/user/user.types';
 import {actionUpdateUserData} from '../../store/user/user.action';
+import {EnhancedTargets} from '../../utils/general/general.utils';
 
 type ChildProps = {
-  currencyState: string;
+  targetId: string;
 };
 
-const TransactionsTable: React.FC<ChildProps> = ({currencyState}) => {
-  const currencyTransactions = useAppSelector(selectIndividualTransactions);
+const TransactionsTable: React.FC<ChildProps> = ({targetId}) => {
+  const targets = useAppSelector(selectEnhancedTargets).filter(
+    ({_id}) => _id === targetId
+  );
+
+  const target = targets[0];
+
+  const individualTransactions = target.total.transactions;
+
   const accounts = useAppSelector(selectAccounts);
   const userData = useAppSelector(selectUserData);
   const userAuth = useAppSelector(selectUserAuth);
+  const {format} = useAppSelector(selectformatter);
+
   const dispatch = useAppDispatch();
 
   const findAccountByID = (id: string) => {
     return accounts.find(account => account.id === id);
-  };
-
-  const formatValue = (value: number) => {
-    if (!currencyState) return;
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyState,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-    return formatter.format(value);
   };
 
   const updateTransaction = async (date: string, id: string) => {
@@ -57,7 +57,7 @@ const TransactionsTable: React.FC<ChildProps> = ({currencyState}) => {
     <TableContainer>
       <Table aria-label="transactions table">
         <TableBody>
-          {currencyTransactions[currencyState].map((transaction, index) => {
+          {individualTransactions.map((transaction, index) => {
             return (
               <TableRow key={index}>
                 <TableCell>{transaction.date}</TableCell>
@@ -70,14 +70,12 @@ const TransactionsTable: React.FC<ChildProps> = ({currencyState}) => {
                   }
                   align="right"
                 >
-                  {formatValue(transaction.amount)}
+                  {format(transaction.amount)}
                 </TableCell>
                 <TableCell align="center">
-                  {findAccountByID(transaction.accountId) ? (
-                    findAccountByID(transaction.accountId)?.name
-                  ) : (
-                    <></>
-                  )}
+                  {findAccountByID(transaction.accountId)
+                    ? findAccountByID(transaction.accountId)?.name
+                    : 'Unknown account'}
                 </TableCell>
                 <TableCell>
                   <Button
@@ -85,7 +83,9 @@ const TransactionsTable: React.FC<ChildProps> = ({currencyState}) => {
                       updateTransaction(transaction.date, transaction.id);
                     }}
                     variant="contained"
-                  ></Button>
+                  >
+                    Paid
+                  </Button>
                 </TableCell>
               </TableRow>
             );

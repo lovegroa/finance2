@@ -1,5 +1,5 @@
 import {FC} from 'react';
-import {selectAccounts} from '../../store/user/user.slice';
+import {selectAccounts, selectformatter} from '../../store/user/user.slice';
 import {useAppSelector} from '../../utils/hooks/hooks.utils';
 import {
   TableContainer,
@@ -28,6 +28,8 @@ const AccountsTable: FC<ChildProps> = ({
   setShowAddAccountForm,
 }) => {
   const accounts = useAppSelector(selectAccounts);
+  const {format} = useAppSelector(selectformatter);
+
   return (
     <TableContainer>
       <Table aria-label="accounts table">
@@ -57,12 +59,6 @@ const AccountsTable: FC<ChildProps> = ({
               return 0;
             })
             .map((account, index) => {
-              const formatter = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: account.currency,
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              });
               return (
                 <TableRow
                   key={index}
@@ -75,7 +71,7 @@ const AccountsTable: FC<ChildProps> = ({
                     }
                     align="right"
                   >
-                    {formatter.format(Number(account.balance))}
+                    {format(Number(account.balance))}
                   </TableCell>
                   <TableCell align="center">
                     {account.includeInCalculations ? (

@@ -1,6 +1,10 @@
 import {ChangeEvent, FormEvent, useState} from 'react';
 import {actionUpdateUserData} from '../../store/user/user.action';
-import {selectUserAuth, selectUserData} from '../../store/user/user.slice';
+import {
+  selectCurrency,
+  selectUserAuth,
+  selectUserData,
+} from '../../store/user/user.slice';
 
 import {UserType} from '../../store/user/user.types';
 import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
@@ -25,19 +29,6 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-const defaultFormFields: UserType['accounts'][0] = {
-  balance: '0',
-  color: '#000000',
-  createdDate: new Date().toString(),
-  id: v4(),
-  includeInCalculations: true,
-  isPriority: false,
-  balanceLimit: '0',
-  name: '',
-  accountType: 'debit',
-  currency: 'USD',
-};
-
 type ChildProps = {
   setShowAddAccountForm: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -45,6 +36,21 @@ type ChildProps = {
 const AddAccountForm: React.FC<ChildProps> = ({setShowAddAccountForm}) => {
   const userData = useAppSelector(selectUserData);
   const userAuth = useAppSelector(selectUserAuth);
+  const globalCurrency = useAppSelector(selectCurrency);
+
+  const defaultFormFields: UserType['accounts'][0] = {
+    balance: '0',
+    color: '#000000',
+    createdDate: new Date().toString(),
+    id: v4(),
+    includeInCalculations: true,
+    isPriority: false,
+    balanceLimit: '0',
+    name: '',
+    accountType: 'debit',
+    currency: globalCurrency,
+  };
+
   const dispatch = useAppDispatch();
   const [formFields, setFormFields] = useState(defaultFormFields);
   const {

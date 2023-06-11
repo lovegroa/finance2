@@ -12,9 +12,11 @@ import {v4} from 'uuid';
 import {
   Box,
   Button,
+  Checkbox,
   Container,
   CssBaseline,
   FormControl,
+  FormControlLabel,
   Grid,
   IconButton,
   InputLabel,
@@ -52,6 +54,7 @@ const AddTransactionForm: React.FC<ChildProps> = ({
     frequency: 'monthly',
     accountId: primaryAccount.id,
     paidDates: [],
+    noEndDate: false,
   };
 
   const [formFields, setFormFields] = useState(defaultFormFields);
@@ -63,16 +66,44 @@ const AddTransactionForm: React.FC<ChildProps> = ({
     frequency,
     name,
     accountId,
+    noEndDate,
   } = formFields;
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const {name, value} = event.target;
-    setFormFields({...formFields, [name]: value});
+
+    if (name === 'noEndDate') {
+      setFormFields({
+        ...formFields,
+        [name]: !formFields[name],
+      });
+    } else {
+      if (frequency === 'once') {
+        setFormFields({
+          ...formFields,
+          [name]: value,
+          endDate: name === 'startDate' ? value : startDate,
+          noEndDate: false,
+        });
+      } else {
+        const {name, value} = event.target;
+        setFormFields({...formFields, [name]: value});
+      }
+    }
   };
 
   const handleSelectChange = (event: SelectChangeEvent<string>) => {
     const {name, value} = event.target;
-    setFormFields({...formFields, [name]: value});
+    if (frequency === 'once') {
+      setFormFields({
+        ...formFields,
+        [name]: value,
+        endDate: name === 'startDate' ? value : startDate,
+        noEndDate: false,
+      });
+    } else {
+      setFormFields({...formFields, [name]: value});
+    }
   };
 
   const resetFormFields = () => {
@@ -81,6 +112,10 @@ const AddTransactionForm: React.FC<ChildProps> = ({
 
   const addTransaction = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (formFields.noEndDate) {
+      delete formFields.endDate;
+    }
     if (!userAuth) return;
     const newUserData = JSON.parse(JSON.stringify(userData)) as UserType;
     formFields.id = v4();
@@ -109,7 +144,7 @@ const AddTransactionForm: React.FC<ChildProps> = ({
             <CloseIcon />
           </IconButton>
         </Grid>
-        <Box component="form" noValidate onSubmit={addTransaction} sx={{mt: 3}}>
+        <Box component="form" onSubmit={addTransaction} sx={{mt: 3}}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
@@ -123,32 +158,7 @@ const AddTransactionForm: React.FC<ChildProps> = ({
                 value={name}
               />
             </Grid>
-            <Grid item xs={6}>
-              <TextField
-                autoComplete="start date"
-                name="startDate"
-                required
-                fullWidth
-                id="startDate"
-                label="Start date"
-                onChange={handleChange}
-                value={startDate}
-                type="date"
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                autoComplete="end date"
-                name="endDate"
-                required
-                fullWidth
-                id="endDate"
-                label="End date"
-                onChange={handleChange}
-                value={endDate}
-                type="date"
-              />
-            </Grid>
+
             <Grid item xs={6}>
               <TextField
                 autoComplete="amount"
@@ -172,6 +182,7 @@ const AddTransactionForm: React.FC<ChildProps> = ({
                   label="Transaction type"
                   onChange={handleSelectChange}
                   name="transactionType"
+                  required
                 >
                   <MenuItem value={'debit'}>Debit</MenuItem>
                   <MenuItem value={'credit'}>Credit</MenuItem>
@@ -188,6 +199,7 @@ const AddTransactionForm: React.FC<ChildProps> = ({
                   label="Frequency"
                   onChange={handleSelectChange}
                   name="frequency"
+                  required
                 >
                   <MenuItem value={'daily'}>Daily</MenuItem>
                   <MenuItem value={'weekly'}>Weekly</MenuItem>
@@ -207,6 +219,7 @@ const AddTransactionForm: React.FC<ChildProps> = ({
                   label="Account"
                   onChange={handleSelectChange}
                   name="accountId"
+                  required
                 >
                   {accounts.map(account => (
                     <MenuItem key={account.id} value={account.id}>
@@ -216,6 +229,55 @@ const AddTransactionForm: React.FC<ChildProps> = ({
                 </Select>
               </FormControl>
             </Grid>
+            <Grid item xs={6}>
+              <TextField
+                autoComplete="start date"
+                name="startDate"
+                required
+                fullWidth
+                id="startDate"
+                label={frequency === 'once' ? 'Date' : 'Start date'}
+                onChange={handleChange}
+                value={startDate}
+                type="date"
+              />
+            </Grid>
+            {frequency !== 'once' ? (
+              <>
+                {!noEndDate ? (
+                  <Grid item xs={6}>
+                    <TextField
+                      autoComplete="end date"
+                      name="endDate"
+                      required
+                      fullWidth
+                      id="endDate"
+                      label="End date"
+                      onChange={handleChange}
+                      value={endDate}
+                      type="date"
+                    />
+                  </Grid>
+                ) : (
+                  <></>
+                )}
+
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        onChange={handleChange}
+                        checked={noEndDate}
+                        name="noEndDate"
+                      />
+                    }
+                    label="No end date"
+                  />
+                </Grid>
+              </>
+            ) : (
+              <></>
+            )}
           </Grid>
           <Button
             type="submit"

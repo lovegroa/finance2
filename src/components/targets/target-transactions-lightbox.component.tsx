@@ -11,6 +11,8 @@ import {
 import {Dispatch, SetStateAction} from 'react';
 import {IndividualTransaction} from '../../utils/general/general.utils';
 import {Currency} from '../../store/user/user.types';
+import {useAppSelector} from '../../utils/hooks/hooks.utils';
+import {selectformatter} from '../../store/user/user.slice';
 
 type ChildProps = {
   setTransactions: Dispatch<
@@ -23,14 +25,9 @@ type ChildProps = {
 const TargetTransactionsLightbox: React.FC<ChildProps> = ({
   setTransactions,
   transactions,
-  currency,
 }) => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
+  const {format} = useAppSelector(selectformatter);
+
   return (
     <Modal
       id="modal"
@@ -69,7 +66,7 @@ const TargetTransactionsLightbox: React.FC<ChildProps> = ({
                       }}
                     >
                       {transaction.transactionType === 'credit'
-                        ? formatter.format(transaction.amount)
+                        ? format(transaction.amount)
                         : ''}
                     </TableCell>
                     <TableCell
@@ -78,7 +75,7 @@ const TargetTransactionsLightbox: React.FC<ChildProps> = ({
                       }}
                     >
                       {transaction.transactionType === 'debit'
-                        ? formatter.format(transaction.amount)
+                        ? format(transaction.amount)
                         : ''}
                     </TableCell>
                   </TableRow>

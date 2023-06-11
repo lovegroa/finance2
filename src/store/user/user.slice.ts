@@ -2,7 +2,7 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {Currency} from 'firebase/analytics';
 import {User} from 'firebase/auth';
 import {
-  createCurrencyTransactions,
+  createTransactions,
   enhanceTargets,
   generateDatasets,
   generateLabels,
@@ -44,6 +44,7 @@ const initialState: UserInitialState = {
     transactions: [],
     name: '',
     targets: [],
+    currency: 'GBP',
   },
   errors: {
     'auth/wrong-password': false,
@@ -147,12 +148,27 @@ export const {
 export const selectUserAuth = (state: RootState) =>
   state.user.userAuth ? (JSON.parse(state.user.userAuth) as User) : undefined;
 export const selectLoggedIn = (state: RootState) => !!state.user.userAuth;
+export const selectCurrency = (state: RootState) =>
+  state.user.userData.currency;
 export const selectUserData = (state: RootState) => state.user.userData;
-export const selectAccounts = (state: RootState) =>
-  state.user.userData.accounts;
+
+//all core data is filtered by currency
+export const selectAccounts = (state: RootState) => {
+  const {currency, accounts} = state.user.userData;
+  return accounts.filter(account => {
+    return account.currency === currency;
+  });
+};
 export const selectTransactions = (state: RootState) =>
   state.user.userData.transactions;
-export const selectTargets = (state: RootState) => state.user.userData.targets;
+export const selectTargets = (state: RootState) => {
+  const {currency, targets} = state.user.userData;
+  return targets.filter(target => {
+    return target.currency === currency;
+  });
+
+  state.user.userData.targets;
+};
 export const selectUsedCurrencies = (state: RootState) =>
   Array.from(
     new Set(state.user.userData.accounts.map(account => account.currency))
@@ -165,17 +181,13 @@ type Totals = {
   onlyCalculatedLimit: number;
 };
 export type AccountTotals = {
-  currency: 'JPY' | 'USD' | 'GBP';
   debit: Totals;
   credit: Totals;
   total: Totals;
 };
-export const selectAccountTotals = (state: RootState): AccountTotals[] => {
-  const {accounts} = state.user.userData;
-  const usedCurrencies = Array.from(
-    new Set(accounts.map(account => account.currency))
-  );
-
+export const selectAccountTotals = (state: RootState): AccountTotals => {
+  const accounts = selectAccounts(state);
+  const {currency} = state.user.userData;
   const total = (
     currency: Currency,
     onlyCalculated: boolean,
@@ -208,37 +220,34 @@ export const selectAccountTotals = (state: RootState): AccountTotals[] => {
     }, 0);
   };
 
-  return usedCurrencies.map<AccountTotals>(currency => {
-    return {
-      currency: currency,
-      debit: {
-        total: total(currency, false, 'debit', 'balance'),
-        onlyCalculated: total(currency, true, 'debit', 'balance'),
-        totalLimit: total(currency, false, 'debit', 'limit'),
-        onlyCalculatedLimit: total(currency, true, 'debit', 'limit'),
-      },
-      credit: {
-        total: total(currency, false, 'credit', 'balance'),
-        onlyCalculated: total(currency, true, 'credit', 'balance'),
-        totalLimit: total(currency, false, 'credit', 'limit'),
-        onlyCalculatedLimit: total(currency, true, 'credit', 'limit'),
-      },
-      total: {
-        total:
-          total(currency, false, 'debit', 'balance') -
-          total(currency, false, 'credit', 'balance'),
-        onlyCalculated:
-          total(currency, true, 'debit', 'balance') -
-          total(currency, true, 'credit', 'balance'),
-        totalLimit:
-          total(currency, false, 'debit', 'limit') -
-          total(currency, false, 'credit', 'limit'),
-        onlyCalculatedLimit:
-          total(currency, true, 'debit', 'limit') -
-          total(currency, true, 'credit', 'limit'),
-      },
-    };
-  });
+  return {
+    debit: {
+      total: total(currency, false, 'debit', 'balance'),
+      onlyCalculated: total(currency, true, 'debit', 'balance'),
+      totalLimit: total(currency, false, 'debit', 'limit'),
+      onlyCalculatedLimit: total(currency, true, 'debit', 'limit'),
+    },
+    credit: {
+      total: total(currency, false, 'credit', 'balance'),
+      onlyCalculated: total(currency, true, 'credit', 'balance'),
+      totalLimit: total(currency, false, 'credit', 'limit'),
+      onlyCalculatedLimit: total(currency, true, 'credit', 'limit'),
+    },
+    total: {
+      total:
+        total(currency, false, 'debit', 'balance') -
+        total(currency, false, 'credit', 'balance'),
+      onlyCalculated:
+        total(currency, true, 'debit', 'balance') -
+        total(currency, true, 'credit', 'balance'),
+      totalLimit:
+        total(currency, false, 'debit', 'limit') -
+        total(currency, false, 'credit', 'limit'),
+      onlyCalculatedLimit:
+        total(currency, true, 'debit', 'limit') -
+        total(currency, true, 'credit', 'limit'),
+    },
+  };
 };
 
 export const selectSignInLoading = (state: RootState) =>
@@ -276,7 +285,6 @@ export const selectDisplayData = (state: RootState) => {
   const usedCurrencies = selectUsedCurrencies(state);
   const accounts = selectAccounts(state);
   const transactions = selectTransactions(state);
-  const targets = selectTargets(state);
   const targetDate = new Date('2023-07-24');
   const labels: Date[] = generateLabels(targetDate, new Date());
   return usedCurrencies.map(currency => {
@@ -305,52 +313,26 @@ export const selectDisplayData = (state: RootState) => {
 export const selectIndividualTransactions = (state: RootState) => {
   const transactions = selectTransactions(state);
   const accounts = selectAccounts(state);
-  const usedCurrencies = selectUsedCurrencies(state);
 
-  return createCurrencyTransactions(
-    transactions,
-    accounts,
-    usedCurrencies,
-    new Date('2023-07-24')
-  );
+  return createTransactions(transactions, accounts, new Date('2023-07-24'));
 };
 
 export const selectEnhancedTargets = (state: RootState) => {
   const targets = selectTargets(state);
-  const usedCurrencies = selectUsedCurrencies(state);
   const accounts = selectAccounts(state);
   const accountTotals = selectAccountTotals(state);
   const transactions = selectTransactions(state);
 
-  //   targets = [
-  //     {
-  //       _id: '1',
-  //       balanceEnd: '0',
-  //       currency: 'JPY',
-  //       dateCreated: '2020-03-03',
-  //       dateEnd: '2023-06-24',
-  //     },
-  //     {
-  //       _id: '1',
-  //       balanceEnd: '0',
-  //       currency: 'GBP',
-  //       dateCreated: '2020-03-03',
-  //       dateEnd: '2024-05-24',
-  //     },
-  //     {
-  //       _id: '1',
-  //       balanceEnd: '0',
-  //       currency: 'JPY',
-  //       dateCreated: '2020-03-03',
-  //       dateEnd: '2023-07-24',
-  //     },
-  //   ];
+  return enhanceTargets(targets, accounts, accountTotals, transactions);
+};
 
-  return enhanceTargets(
-    targets,
-    usedCurrencies,
-    accounts,
-    accountTotals,
-    transactions
-  );
+export const selectformatter = (state: RootState) => {
+  const currency = selectCurrency(state);
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 };

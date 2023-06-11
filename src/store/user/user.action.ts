@@ -50,10 +50,10 @@ export const actionSignIn =
             alert('User not found');
             break;
           default:
-            console.log('user sign in failed', JSON.stringify(error));
+            console.log('user sign in failed h1', JSON.stringify(error));
         }
       } else {
-        console.log('user sign in failed', JSON.stringify(error));
+        console.log('user sign in failed h2', JSON.stringify(error));
       }
     }
     if (!user) return;
@@ -117,6 +117,7 @@ export const actionGoogleSignIn = () => async (appDispatch: AppDispatch) => {
   let user: User | undefined;
   try {
     const response = await getRedirectResult(auth);
+    console.log({response});
     if (!response) throw new Error();
     user = response.user;
     await CreateUserDocumentFromAuth(user); // only creates the document if the user does not exist
@@ -132,10 +133,10 @@ export const actionGoogleSignIn = () => async (appDispatch: AppDispatch) => {
           alert('User not found');
           break;
         default:
-          console.log('user sign in failed', JSON.stringify(error));
+          console.log('user sign in failed h3', JSON.stringify(error));
       }
     } else {
-      console.log('user sign in failed', JSON.stringify(error));
+      console.log('user sign in failed h4', JSON.stringify(error));
     }
   }
   if (!user) return;

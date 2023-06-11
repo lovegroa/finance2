@@ -1,5 +1,5 @@
 import {initializeApp} from 'firebase/app';
-import {getAnalytics} from 'firebase/analytics';
+import {Currency, getAnalytics} from 'firebase/analytics';
 import {
   getAuth,
   GoogleAuthProvider,
@@ -50,6 +50,7 @@ export const CreateUserDocumentFromAuth = async (
       transactions: [],
       email: email,
       createdAt: createdAt,
+      currency: 'GBP',
       ...additionalInformation,
     };
     try {

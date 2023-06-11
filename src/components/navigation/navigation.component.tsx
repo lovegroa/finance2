@@ -14,6 +14,7 @@ import {useNavigate} from 'react-router-dom';
 import {useAppDispatch} from '../../utils/hooks/hooks.utils';
 import {actionSignOut} from '../../store/user/user.action';
 import SettingsIcon from '@mui/icons-material/Settings';
+import CurrencySelect from './currency-select.component';
 
 const pages = ['accounts', 'targets', 'transactions'];
 const settings = ['Account', 'Sign Out'];
@@ -137,6 +138,7 @@ function Navigation() {
               </Button>
             ))}
           </Box>
+          <CurrencySelect />
           <Box sx={{flexGrow: 0}}>
             <Tooltip title="Open settings">
               <IconButton

@@ -1,9 +1,4 @@
-import {
-  Account,
-  Currency,
-  Target,
-  Transaction,
-} from '../../store/user/user.types';
+import {Account, Target, Transaction} from '../../store/user/user.types';
 import {addMonths} from 'date-fns';
 import {ChartDataset, Point} from 'chart.js';
 import {AccountTotals} from '../../store/user/user.slice';
@@ -191,49 +186,35 @@ export const listIndividualTransactions = (
   return result;
 };
 
-export type CurrencyTransactions = {
-  [key: string]: IndividualTransaction[];
-};
-
 /**
  * Generates all of the transactions for each currency for a given time range.
  * It does not include transactions that have been paid.
  *
  * @param {Transaction[]} transactions - The transactions as stored in the DB
  * @param {Account[]} accounts - The accounts as store in the DB.
- * @param {Currency[]} usedCurrencies - An array of all the currencies used.
  * @param {Date} dateEnd - The target date.
- * @returns {CurrencyTransactions} An object with each of the used currencies as a key and the individual transactions array as the value.
+ * @returns {IndividualTransaction} An individual transactions array as the value.
  */
-export const createCurrencyTransactions = (
+export const createTransactions = (
   transactions: Transaction[],
   accounts: Account[],
-  usedCurrencies: Currency[],
   dateEnd: Date
-): CurrencyTransactions => {
-  return usedCurrencies.reduce<CurrencyTransactions>((acc, currency) => {
-    const filteredAccounts = accounts.filter(
-      account => account.currency === currency
-    );
-    //find all transactions by account
-    const currencyTransactions = transactions.filter(transaction =>
-      filteredAccounts.some(account => transaction.accountId === account.id)
-    );
-    //work out acountTransactions by date within the timeframe
-    acc[currency] = currencyTransactions.reduce<IndividualTransaction[]>(
-      (acc, individualTransaction) => {
-        acc = acc.concat(
-          listIndividualTransactions(dateEnd, individualTransaction)
-        );
-        return acc;
-      },
-      []
-    );
-    acc[currency].sort((a, b) => {
+): IndividualTransaction[] => {
+  //find all transactions by account
+  const accountTransactions = transactions.filter(transaction =>
+    accounts.some(account => transaction.accountId === account.id)
+  );
+  //work out accountTransactions by date within the timeframe
+  return accountTransactions
+    .reduce<IndividualTransaction[]>((acc, individualTransaction) => {
+      acc = acc.concat(
+        listIndividualTransactions(dateEnd, individualTransaction)
+      );
+      return acc;
+    }, [])
+    .sort((a, b) => {
       return a.date.localeCompare(b.date);
     });
-    return acc;
-  }, {});
 };
 
 export const totalDatasets = (labels: Date[], datasets: GeneratedDataset[]) => {
@@ -267,7 +248,6 @@ export type EnhancedTarget = {
 
 export type EnhancedTargets = {
   _id: string;
-  currency: Currency;
   total: EnhancedTarget;
   accounts: EnhancedTarget[];
 };
@@ -298,9 +278,8 @@ const totalTransactions = (
 
 export const enhanceTargets = (
   targets: Target[],
-  usedCurrencies: Currency[],
   accounts: Account[],
-  accountTotals: AccountTotals[],
+  accountTotals: AccountTotals,
   transactions: Transaction[]
 ): EnhancedTargets[] => {
   const result: EnhancedTargets[] = [];
@@ -316,22 +295,20 @@ export const enhanceTargets = (
   }, new Date());
 
   //generates all the transactions for all currencies
-  const currencyTransactions = createCurrencyTransactions(
+  const individualTransactions = createTransactions(
     transactions,
     accounts,
-    usedCurrencies,
     finalDateEnd
   );
 
   const calc = (
-    currencyIndex: number,
-    currencyTransactions: CurrencyTransactions,
-    currency: Currency,
+    targetIndex: number,
+    individualTransactions: IndividualTransaction[],
     dateEnd: Date,
-    currencyTargets: Target[],
+    targets: Target[],
     balanceEnd: number,
     name: string,
-    accountTotals: AccountTotals[],
+    accountTotals: AccountTotals,
     result: EnhancedTargets[],
     accountInfo?: {
       accountIndex: number;
@@ -342,20 +319,17 @@ export const enhanceTargets = (
     }
   ) => {
     let balanceBegin = 0;
-    let transactions: IndividualTransaction[] = [];
+    let tempTransactions: IndividualTransaction[] = [];
     let dateBegin = new Date();
 
-    if (!currencyIndex) {
+    if (!targetIndex) {
       if (accountInfo) {
         balanceBegin = Number(accountInfo.balance);
       } else {
-        balanceBegin = accountTotals.reduce((acc, currencyTotal) => {
-          if (currencyTotal.currency !== currency) return acc;
-          return (acc = currencyTotal.total.onlyCalculated);
-        }, 0);
+        balanceBegin = accountTotals.total.onlyCalculated;
       }
 
-      transactions = currencyTransactions[currency].filter(
+      tempTransactions = individualTransactions.filter(
         ({date}) => new Date(date) <= dateEnd
       );
     } else {
@@ -364,17 +338,17 @@ export const enhanceTargets = (
           result[result.length - 1].accounts[accountInfo.accountIndex]
             .balanceEnd;
       } else {
-        balanceBegin = Number(currencyTargets[currencyIndex - 1].balanceEnd);
+        balanceBegin = Number(targets[targetIndex - 1].balanceEnd);
       }
-      dateBegin = new Date(currencyTargets[currencyIndex - 1].dateEnd);
+      dateBegin = new Date(targets[targetIndex - 1].dateEnd);
       dateBegin.setDate(dateBegin.getDate() + 1);
-      transactions = currencyTransactions[currency].filter(
+      tempTransactions = individualTransactions.filter(
         ({date}) => new Date(date) >= dateBegin && new Date(date) <= dateEnd
       );
     }
 
     if (accountInfo) {
-      transactions = transactions.filter(
+      tempTransactions = tempTransactions.filter(
         transaction => transaction.accountId === accountInfo.accountId
       );
     }
@@ -383,7 +357,7 @@ export const enhanceTargets = (
     const dateDifference = new Date(dateEnd).getTime() - dateBegin.getTime();
     const days = Math.ceil(dateDifference / (1000 * 3600 * 24)) + 1;
 
-    const {totalCredit, totalDebit} = totalTransactions(transactions);
+    const {totalCredit, totalDebit} = totalTransactions(tempTransactions);
 
     const dates = generateLabels(dateEnd, dateBegin);
 
@@ -393,7 +367,6 @@ export const enhanceTargets = (
       cashPerDay = accountInfo.isPriority ? accountInfo.cashPerDay : 0;
       balanceDisposable = cashPerDay * days;
       balanceEnd = balanceBegin + totalCredit - totalDebit - balanceDisposable;
-      //   debugger;
     } else {
       balanceDisposable = balanceBegin + totalCredit - totalDebit - balanceEnd;
       cashPerDay = balanceDisposable / days;
@@ -401,12 +374,9 @@ export const enhanceTargets = (
 
     let balanceRunning = balanceBegin;
     const dataset = dates.map((date, index) => {
-      const amount = transactions
+      const amount = tempTransactions
         .filter(transaction => {
           if (!index) {
-            // if (currencyIndex === 1) {
-            //   debugger;
-            // }
             //on the first date, it looks to see if anything older has not been paid yet
             return (
               new Date(transaction.date).getTime() <=
@@ -424,22 +394,9 @@ export const enhanceTargets = (
           }
           return acc;
         }, 0);
-      if (!accountInfo) {
-        console.log({
-          aaa: index,
-          amount,
-          cashPerDay,
-          balanceRunning,
-          balanceBegin,
-        });
-      }
 
       balanceRunning -= amount + cashPerDay;
       return balanceRunning;
-    });
-
-    console.log({
-      dataset,
     });
 
     return {
@@ -453,65 +410,58 @@ export const enhanceTargets = (
       name,
       totalCredit,
       totalDebit,
-      transactions,
+      transactions: tempTransactions,
       dataset,
     };
   };
 
-  usedCurrencies.forEach(currency => {
-    const currencyTargets = validTargets
-      .filter(target => target.currency === currency)
-      .sort(
-        //from oldest to newest
-        (a, b) => new Date(a.dateEnd).getTime() - new Date(b.dateEnd).getTime()
-      );
-
-    currencyTargets.forEach((currencyTarget, i) => {
-      const {_id, currency} = currencyTarget;
-      const balanceEnd = Number(currencyTarget.balanceEnd);
-      const dateEnd = new Date(currencyTarget.dateEnd);
+  validTargets
+    .sort(
+      //from oldest to newest
+      (a, b) => new Date(a.dateEnd).getTime() - new Date(b.dateEnd).getTime()
+    )
+    .forEach((target, targetIndex) => {
+      const {_id} = target;
+      const balanceEnd = Number(target.balanceEnd);
+      const dateEnd = new Date(target.dateEnd);
       const total = calc(
-        i,
-        currencyTransactions,
-        currency,
+        targetIndex,
+        individualTransactions,
         dateEnd,
-        currencyTargets,
+        validTargets,
         balanceEnd,
         'Total',
         accountTotals,
         result
       );
 
-      const accountsArray: EnhancedTarget[] = accounts
-        .filter(account => account.currency === currency)
-        .map(({name, id, isPriority, balance}, i2) => {
+      const accountsArray: EnhancedTarget[] = accounts.map(
+        ({name, id, isPriority, balance}, accountIndex) => {
           return calc(
-            i,
-            currencyTransactions,
-            currency,
+            targetIndex,
+            individualTransactions,
             dateEnd,
-            currencyTargets,
+            validTargets,
             balanceEnd,
             name,
             accountTotals,
             result,
             {
-              accountIndex: i2,
+              accountIndex,
               accountId: id,
-              isPriority: isPriority,
+              isPriority,
               cashPerDay: total.cashPerDay,
               balance: Number(balance),
             }
           );
-        });
+        }
+      );
       result.push({
         _id,
-        currency,
         total,
         accounts: accountsArray,
       });
     });
-  });
 
   return result;
 };

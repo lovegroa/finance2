@@ -67,8 +67,6 @@ const UpdateAccountForm: FC<ChildProps> = ({
     }
   };
 
-  useEffect(() => console.log(formFields), [formFields]);
-
   const handleSelectChange = (event: SelectChangeEvent<string>) => {
     const {name, value} = event.target;
     setFormFields({...formFields, [name]: value});

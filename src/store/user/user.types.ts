@@ -20,6 +20,7 @@ export type UserType = {
   transactions: Transaction[];
   name: string | null;
   targets: Target[];
+  currency: Currency;
 };
 
 export type Target = {
@@ -36,6 +37,7 @@ export type Transaction = {
   createdDate: string;
   startDate: string;
   endDate?: string;
+  noEndDate: boolean;
   amount: string;
   transactionType: 'debit' | 'credit';
   accountId: string;

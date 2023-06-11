@@ -1,5 +1,9 @@
 import {FC} from 'react';
-import {selectAccountTotals} from '../../store/user/user.slice';
+import {
+  selectAccountTotals,
+  selectCurrency,
+  selectformatter,
+} from '../../store/user/user.slice';
 import {useAppSelector} from '../../utils/hooks/hooks.utils';
 import {
   TableContainer,
@@ -11,7 +15,9 @@ import {
 } from '@mui/material';
 
 const AccountsSummary: FC = () => {
-  const accountTotals = useAppSelector(selectAccountTotals);
+  const {debit, credit, total} = useAppSelector(selectAccountTotals);
+  const currency = useAppSelector(selectCurrency);
+  const {format} = useAppSelector(selectformatter);
 
   return (
     <TableContainer>
@@ -43,48 +49,26 @@ const AccountsSummary: FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {accountTotals.map((account, index) => {
-            const formatter = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: account.currency,
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            });
-            return (
-              <TableRow key={index}>
-                <TableCell>{account.currency}</TableCell>
-                <TableCell align="right">
-                  {formatter.format(account.debit.onlyCalculated)}
-                </TableCell>
-                <TableCell align="right">
-                  {formatter.format(account.credit.onlyCalculated)}
-                </TableCell>
-                <TableCell align="right">
-                  {formatter.format(account.total.onlyCalculated)}
-                </TableCell>
-                <TableCell align="right">
-                  {formatter.format(
-                    account.debit.onlyCalculated -
-                      account.debit.onlyCalculatedLimit
-                  )}
-                </TableCell>
-                <TableCell align="right">
-                  {formatter.format(
-                    account.credit.onlyCalculatedLimit -
-                      account.credit.onlyCalculated
-                  )}
-                </TableCell>
-                <TableCell align="right">
-                  {formatter.format(
-                    account.debit.onlyCalculated -
-                      account.debit.onlyCalculatedLimit +
-                      account.credit.onlyCalculatedLimit -
-                      account.credit.onlyCalculated
-                  )}
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          <TableRow>
+            <TableCell>{currency}</TableCell>
+            <TableCell align="right">{format(debit.onlyCalculated)}</TableCell>
+            <TableCell align="right">{format(credit.onlyCalculated)}</TableCell>
+            <TableCell align="right">{format(total.onlyCalculated)}</TableCell>
+            <TableCell align="right">
+              {format(debit.onlyCalculated - debit.onlyCalculatedLimit)}
+            </TableCell>
+            <TableCell align="right">
+              {format(credit.onlyCalculatedLimit - credit.onlyCalculated)}
+            </TableCell>
+            <TableCell align="right">
+              {format(
+                debit.onlyCalculated -
+                  debit.onlyCalculatedLimit +
+                  credit.onlyCalculatedLimit -
+                  credit.onlyCalculated
+              )}
+            </TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     </TableContainer>
