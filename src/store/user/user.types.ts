@@ -42,8 +42,10 @@ export type Transaction = {
   transactionType: 'debit' | 'credit';
   accountId: string;
   paidDates: string[];
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'once';
+  frequency: Frequency;
 };
+
+export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'once';
 
 export type Account = {
   id: string;

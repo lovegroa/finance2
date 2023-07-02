@@ -10,7 +10,7 @@ import {
   totalDatasets,
 } from '../../utils/general/general.utils';
 import {RootState} from '../store';
-import {AccountType, UserType} from './user.types';
+import {AccountType, Frequency, UserType} from './user.types';
 
 type UserInitialState = {
   userAuth: string | undefined;
@@ -335,4 +335,8 @@ export const selectformatter = (state: RootState) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
+};
+
+export const selectFrequencies = (): Set<Frequency> => {
+  return new Set(['daily', 'weekly', 'monthly', 'yearly', 'once']);
 };

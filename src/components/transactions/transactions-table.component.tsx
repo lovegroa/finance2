@@ -9,89 +9,76 @@ import {
   Button,
 } from '@mui/material';
 import MoneyIcon from '@mui/icons-material/Money';
-import {UserType} from '../../store/user/user.types';
-import {selectTransactions, selectAccounts} from '../../store/user/user.slice';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import {
+  Account,
+  Frequency,
+  Transaction,
+  UserType,
+} from '../../store/user/user.types';
+import {selectTransactions, selectformatter} from '../../store/user/user.slice';
 
 type ChildProps = {
   setCurrentTransaction: React.Dispatch<
     React.SetStateAction<UserType['transactions'][0] | undefined>
   >;
   setShowAddTransactionForm: React.Dispatch<React.SetStateAction<boolean>>;
+  account: Account;
+  frequency: Frequency;
 };
 
 const TransactionsTable: FC<ChildProps> = ({
   setCurrentTransaction,
   setShowAddTransactionForm,
+  account,
+  frequency,
 }) => {
   const transactions = useAppSelector(selectTransactions);
-  const accounts = useAppSelector(selectAccounts);
+  const formatter = useAppSelector(selectformatter);
+
+  const accountTransactions: Transaction[] = transactions.filter(
+    transaction =>
+      transaction.accountId === account.id &&
+      transaction.frequency === frequency
+  );
+
   return (
     <TableContainer>
       <Table aria-label="accounts table">
         <TableBody>
           <>
-            {[...accounts]
-              .sort((a, b) => {
-                return a.name.localeCompare(b.name);
-              })
-              .map(account => {
-                const accountTransactions: UserType['transactions'] =
-                  transactions.filter(
-                    transaction => transaction.accountId === account.id
-                  );
-                if (accountTransactions.length === 0) return;
-                const formatter = new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: account.currency,
-                  minimumFractionDigits: account.currency === 'JPY' ? 0 : 2,
-                  maximumFractionDigits: account.currency === 'JPY' ? 0 : 2,
-                });
+            {
+              <Fragment key={account.id}>
+                <TableRow>
+                  <TableCell>
+                    <strong>Name</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <MoneyIcon></MoneyIcon>
+                  </TableCell>
+                </TableRow>
+                {accountTransactions.map(transaction => {
+                  return (
+                    <TableRow
+                      key={transaction.id}
+                      onClick={() => setCurrentTransaction(transaction)}
+                    >
+                      <TableCell>{transaction.name}</TableCell>
 
-                return (
-                  <Fragment key={account.id}>
-                    <TableRow>
-                      <TableCell align="center" colSpan={3}>
-                        <strong>{account.name}</strong>
+                      <TableCell
+                        align="right"
+                        style={
+                          transaction.transactionType === 'debit'
+                            ? {color: 'red'}
+                            : {}
+                        }
+                      >
+                        {formatter.format(Number(transaction.amount))}
                       </TableCell>
                     </TableRow>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Name</strong>
-                      </TableCell>
-                      <TableCell align="center">
-                        <AccessTimeIcon></AccessTimeIcon>
-                      </TableCell>
-                      <TableCell align="right">
-                        <MoneyIcon></MoneyIcon>
-                      </TableCell>
-                    </TableRow>
-                    {accountTransactions.map(transaction => {
-                      return (
-                        <TableRow
-                          key={transaction.id}
-                          onClick={() => setCurrentTransaction(transaction)}
-                        >
-                          <TableCell>{transaction.name}</TableCell>
-                          <TableCell align="center">
-                            {transaction.frequency}
-                          </TableCell>
-                          <TableCell
-                            align="right"
-                            style={
-                              transaction.transactionType === 'debit'
-                                ? {color: 'red'}
-                                : {}
-                            }
-                          >
-                            {formatter.format(Number(transaction.amount))}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </Fragment>
-                );
-              })}
+                  );
+                })}
+              </Fragment>
+            }
             <TableRow>
               <TableCell align="center" colSpan={4}>
                 <Button

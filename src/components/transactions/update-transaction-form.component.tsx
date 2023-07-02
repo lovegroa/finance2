@@ -10,6 +10,7 @@ import {
 import {actionUpdateUserData} from '../../store/user/user.action';
 import {
   selectAccounts,
+  selectFrequencies,
   selectUserAuth,
   selectUserData,
 } from '../../store/user/user.slice';
@@ -19,9 +20,11 @@ import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
 import {
   Box,
   Button,
+  Checkbox,
   Container,
   CssBaseline,
   FormControl,
+  FormControlLabel,
   Grid,
   IconButton,
   InputLabel,
@@ -45,6 +48,7 @@ const UpdateTransactionForm: FC<ChildProps> = ({
   const userData = useAppSelector(selectUserData);
   const userAuth = useAppSelector(selectUserAuth);
   const accounts = useAppSelector(selectAccounts);
+  const frequencies = useAppSelector(selectFrequencies);
 
   const dispatch = useAppDispatch();
 
@@ -57,6 +61,7 @@ const UpdateTransactionForm: FC<ChildProps> = ({
     frequency,
     name,
     accountId,
+    noEndDate,
   } = formFields;
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -106,18 +111,13 @@ const UpdateTransactionForm: FC<ChildProps> = ({
       >
         <Grid container justifyContent={'space-between'}>
           <Typography component="h1" variant="h5">
-            Add transaction
+            Edit transaction
           </Typography>
           <IconButton onClick={() => setCurrentTransaction(undefined)}>
             <CloseIcon />
           </IconButton>
         </Grid>
-        <Box
-          component="form"
-          noValidate
-          onSubmit={updateTransaction}
-          sx={{mt: 3}}
-        >
+        <Box component="form" onSubmit={updateTransaction} sx={{mt: 3}}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
@@ -129,32 +129,6 @@ const UpdateTransactionForm: FC<ChildProps> = ({
                 label="Transaction name"
                 onChange={handleChange}
                 value={name}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                autoComplete="start date"
-                name="startDate"
-                required
-                fullWidth
-                id="startDate"
-                label="Start date"
-                onChange={handleChange}
-                value={startDate}
-                type="date"
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                autoComplete="end date"
-                name="endDate"
-                required
-                fullWidth
-                id="endDate"
-                label="End date"
-                onChange={handleChange}
-                value={endDate}
-                type="date"
               />
             </Grid>
             <Grid item xs={6}>
@@ -197,11 +171,14 @@ const UpdateTransactionForm: FC<ChildProps> = ({
                   onChange={handleSelectChange}
                   name="frequency"
                 >
-                  <MenuItem value={'daily'}>Daily</MenuItem>
-                  <MenuItem value={'weekly'}>Weekly</MenuItem>
-                  <MenuItem value={'monthly'}>Monthly</MenuItem>
-                  <MenuItem value={'yearly'}>Yearly</MenuItem>
-                  <MenuItem value={'once'}>Once</MenuItem>
+                  {Array.from(frequencies).map(frequency => (
+                    <MenuItem
+                      sx={{textTransform: 'capitalize'}}
+                      value={frequency}
+                    >
+                      {frequency}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -224,6 +201,55 @@ const UpdateTransactionForm: FC<ChildProps> = ({
                 </Select>
               </FormControl>
             </Grid>
+            <Grid item xs={6}>
+              <TextField
+                autoComplete="start date"
+                name="startDate"
+                required
+                fullWidth
+                id="startDate"
+                label="Start date"
+                onChange={handleChange}
+                value={startDate}
+                type="date"
+              />
+            </Grid>
+            {frequency !== 'once' ? (
+              <>
+                {!noEndDate ? (
+                  <Grid item xs={6}>
+                    <TextField
+                      autoComplete="end date"
+                      name="endDate"
+                      required
+                      fullWidth
+                      id="endDate"
+                      label="End date"
+                      onChange={handleChange}
+                      value={endDate}
+                      type="date"
+                    />
+                  </Grid>
+                ) : (
+                  <></>
+                )}
+
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        onChange={handleChange}
+                        checked={noEndDate}
+                        name="noEndDate"
+                      />
+                    }
+                    label="No end date"
+                  />
+                </Grid>
+              </>
+            ) : (
+              <></>
+            )}
           </Grid>
           <Button
             type="submit"
