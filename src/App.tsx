@@ -10,6 +10,8 @@ import {useAppSelector} from './utils/hooks/hooks.utils';
 import {selectLoggedIn} from './store/user/user.slice';
 import Transactions from './routes/transactions.route';
 import Targets from './routes/targets.route';
+import Navigation from './components/navigation/navigation.component';
+import {Box} from '@mui/material';
 
 function App() {
   const userIsLoggedIn = useAppSelector(selectLoggedIn);
@@ -17,23 +19,38 @@ function App() {
   return (
     <>
       <ThemeProvider theme={defaultTheme}>
-        <Routes>
-          {userIsLoggedIn ? (
-            <>
-              <Route path="/accounts" element={<Accounts />}></Route>
-              <Route path="/transactions" element={<Transactions />}></Route>
-              <Route path="/targets" element={<Targets />}></Route>
-              <Route path="/" element={<Homepage />}></Route>
-              <Route path="*" element={<Homepage />}></Route>
-            </>
-          ) : (
-            <>
-              <Route path="/sign-up" element={<SignUp />}></Route>
-              <Route path="/sign-in" element={<SignIn />}></Route>
-              <Route path="*" element={<SignIn />}></Route>
-            </>
-          )}
-        </Routes>
+        <Navigation />
+        <Box
+          sx={{
+            height: 'calc(100vh - 60px)',
+            width: '100vw',
+            overflow: 'auto',
+            p: '1rem',
+          }}
+        >
+          <Box component="main" sx={{height: '100%'}}>
+            <Routes>
+              {userIsLoggedIn ? (
+                <>
+                  <Route path="/accounts" element={<Accounts />}></Route>
+                  <Route
+                    path="/transactions"
+                    element={<Transactions />}
+                  ></Route>
+                  <Route path="/targets" element={<Targets />}></Route>
+                  <Route path="/" element={<Homepage />}></Route>
+                  <Route path="*" element={<Homepage />}></Route>
+                </>
+              ) : (
+                <>
+                  <Route path="/sign-up" element={<SignUp />}></Route>
+                  <Route path="/sign-in" element={<SignIn />}></Route>
+                  <Route path="*" element={<SignIn />}></Route>
+                </>
+              )}
+            </Routes>
+          </Box>
+        </Box>
       </ThemeProvider>
     </>
   );

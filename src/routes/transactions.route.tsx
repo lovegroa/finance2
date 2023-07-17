@@ -1,5 +1,4 @@
 import {useState} from 'react';
-import Navigation from '../components/navigation/navigation.component';
 
 import {Transaction} from '../store/user/user.types';
 import {Container} from '@mui/material';
@@ -57,15 +56,11 @@ const Transactions: React.FC = () => {
   };
 
   return (
-    <div>
-      <Navigation></Navigation>
-      <br></br>
-      <Container component="main" maxWidth="md">
-        {showAddForm()}
-        {showUpdateForm()}
-        {showTabs()}
-      </Container>
-    </div>
+    <Container component="main" maxWidth="md">
+      {showAddForm()}
+      {showUpdateForm()}
+      {showTabs()}
+    </Container>
   );
 };
 

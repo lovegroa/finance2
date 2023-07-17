@@ -1,4 +1,5 @@
 import {FC, useState} from 'react';
+import EditIcon from '@mui/icons-material/Edit';
 import {
   selectCurrency,
   selectEnhancedTargets,
@@ -14,6 +15,7 @@ import {
   TableRow,
   TableCell,
   Button,
+  IconButton,
 } from '@mui/material';
 import {UserType} from '../../store/user/user.types';
 import {IndividualTransaction} from '../../utils/general/general.utils';
@@ -78,6 +80,7 @@ const TargetsTable: FC<ChildProps> = ({
               <TableCell>
                 <strong>Days</strong>
               </TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
@@ -86,6 +89,7 @@ const TargetsTable: FC<ChildProps> = ({
                 <>
                   <TableRow
                     key={index}
+                    hover
                     selected={expandTable === index}
                     onClick={() =>
                       expandTable === index
@@ -97,15 +101,7 @@ const TargetsTable: FC<ChildProps> = ({
                       {total.dateBegin.toLocaleDateString()}
                     </TableCell>
                     <TableCell>{total.dateEnd.toLocaleDateString()}</TableCell>
-                    <TableCell
-                      onClick={() => {
-                        setCurrentTarget(
-                          targets.filter(target => target._id === _id)[0]
-                        );
-                      }}
-                    >
-                      {total.name}
-                    </TableCell>
+                    <TableCell>{total.name}</TableCell>
                     <TableCell>{format(total.balanceBegin)}</TableCell>
                     <TableCell>{format(total.balanceEnd)}</TableCell>
                     <TableCell>{format(total.cashPerDay)}</TableCell>
@@ -125,53 +121,63 @@ const TargetsTable: FC<ChildProps> = ({
                     </TableCell>
                     <TableCell>{format(total.balanceDisposable)}</TableCell>
                     <TableCell>{total.days}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={() => {
+                          setCurrentTarget(
+                            targets.filter(target => target._id === _id)[0]
+                          );
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
-                  {expandTable === index
-                    ? accounts.map((account, index) => {
-                        return (
-                          <TableRow
-                            key={index}
-                            // onClick={() => setCurrentTarget(target)}
-                          >
-                            <TableCell>
-                              {/* {account.dateBegin.toLocaleDateString()} */}
-                            </TableCell>
-                            <TableCell>
-                              {/* {account.dateEnd.toLocaleDateString()} */}
-                            </TableCell>
-                            <TableCell>{account.name}</TableCell>
-                            <TableCell>
-                              {format(account.balanceBegin)}
-                            </TableCell>
-                            <TableCell>{format(account.balanceEnd)}</TableCell>
-                            <TableCell>{format(account.cashPerDay)}</TableCell>
-                            <TableCell
-                              onClick={() => {
-                                setTransactions(account.transactions);
-                              }}
-                            >
-                              {format(account.totalCredit)}
-                            </TableCell>
-                            <TableCell
-                              onClick={() => {
-                                setTransactions(account.transactions);
-                              }}
-                            >
-                              {format(account.totalDebit)}
-                            </TableCell>
-                            <TableCell>
-                              {format(account.balanceDisposable)}
-                            </TableCell>
-                            <TableCell>{account.days}</TableCell>
-                          </TableRow>
-                        );
-                      })
-                    : ''}
+                  {accounts.map((account, i2) => {
+                    return (
+                      <TableRow
+                        key={i2}
+                        sx={{
+                          visibility: expandTable === index ? '' : 'collapse',
+                        }}
+                        // onClick={() => setCurrentTarget(target)}
+                      >
+                        <TableCell>
+                          {/* {account.dateBegin.toLocaleDateString()} */}
+                        </TableCell>
+                        <TableCell>
+                          {/* {account.dateEnd.toLocaleDateString()} */}
+                        </TableCell>
+                        <TableCell>{account.name}</TableCell>
+                        <TableCell>{format(account.balanceBegin)}</TableCell>
+                        <TableCell>{format(account.balanceEnd)}</TableCell>
+                        <TableCell>{format(account.cashPerDay)}</TableCell>
+                        <TableCell
+                          onClick={() => {
+                            setTransactions(account.transactions);
+                          }}
+                        >
+                          {format(account.totalCredit)}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => {
+                            setTransactions(account.transactions);
+                          }}
+                        >
+                          {format(account.totalDebit)}
+                        </TableCell>
+                        <TableCell>
+                          {format(account.balanceDisposable)}
+                        </TableCell>
+                        <TableCell>{account.days}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </>
               );
             })}
             <TableRow>
-              <TableCell align="center" colSpan={4}>
+              <TableCell align="center" colSpan={10}>
                 <Button
                   type="submit"
                   variant="outlined"

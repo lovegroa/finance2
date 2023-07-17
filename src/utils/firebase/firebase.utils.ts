@@ -1,5 +1,5 @@
 import {initializeApp} from 'firebase/app';
-import {Currency, getAnalytics} from 'firebase/analytics';
+import {getAnalytics} from 'firebase/analytics';
 import {
   getAuth,
   GoogleAuthProvider,

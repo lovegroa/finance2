@@ -143,7 +143,7 @@ export default function SignUp() {
             variant="contained"
             sx={{mt: 3, mb: 2}}
           >
-            Sign in with Google
+            Sign up with Google
           </Button>
           <Grid container justifyContent="flex-end">
             <Grid item>

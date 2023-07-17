@@ -244,6 +244,7 @@ export type EnhancedTarget = {
   totalDebit: number;
   transactions: IndividualTransaction[];
   dataset: number[];
+  id?: string;
 };
 
 export type EnhancedTargets = {
@@ -286,7 +287,8 @@ export const enhanceTargets = (
 
   //remove all targets that have expired
   const validTargets = targets.filter(
-    target => new Date(target.dateEnd) >= new Date()
+    target =>
+      new Date(target.dateEnd) >= new Date(convertDateToString(new Date()))
   );
 
   const finalDateEnd = validTargets.reduce((acc, {dateEnd}) => {
@@ -317,7 +319,7 @@ export const enhanceTargets = (
       cashPerDay: number;
       balance: number;
     }
-  ) => {
+  ): EnhancedTarget => {
     let balanceBegin = 0;
     let tempTransactions: IndividualTransaction[] = [];
     let dateBegin = new Date();
@@ -412,6 +414,7 @@ export const enhanceTargets = (
       totalDebit,
       transactions: tempTransactions,
       dataset,
+      id: accountInfo ? accountInfo.accountId : '',
     };
   };
 

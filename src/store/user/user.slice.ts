@@ -2,6 +2,7 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {Currency} from 'firebase/analytics';
 import {User} from 'firebase/auth';
 import {
+  convertDateToString,
   createTransactions,
   enhanceTargets,
   generateDatasets,
@@ -164,10 +165,11 @@ export const selectTransactions = (state: RootState) =>
 export const selectTargets = (state: RootState) => {
   const {currency, targets} = state.user.userData;
   return targets.filter(target => {
-    return target.currency === currency;
+    return (
+      target.currency === currency &&
+      new Date(target.dateEnd) >= new Date(convertDateToString(new Date()))
+    );
   });
-
-  state.user.userData.targets;
 };
 export const selectUsedCurrencies = (state: RootState) =>
   Array.from(
@@ -339,4 +341,8 @@ export const selectformatter = (state: RootState) => {
 
 export const selectFrequencies = (): Set<Frequency> => {
   return new Set(['daily', 'weekly', 'monthly', 'yearly', 'once']);
+};
+
+export const selectIsUserDataLoading = (state: RootState) => {
+  return state.user.loading.setUserData;
 };

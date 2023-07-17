@@ -1,63 +1,52 @@
 import Navigation from '../components/navigation/navigation.component';
 import {
   Box,
-  Button,
-  Container,
+  Chip,
   FormControl,
-  Grid,
   MenuItem,
+  Paper,
   Select,
   SelectChangeEvent,
   Slider,
   Typography,
 } from '@mui/material';
-// import LineChart from '../components/generic/line-chart.component';
 import {useAppSelector} from '../utils/hooks/hooks.utils';
 import {
-  selectCurrency,
+  selectAccounts,
   selectEnhancedTargets,
+  selectIsUserDataLoading,
   selectformatter,
 } from '../store/user/user.slice';
-// import {selectCashPerDay, selectDisplayData} from '../store/user/user.slice';
-// import {generateLabels} from '../utils/general/general.utils';
-// import {Fragment, useEffect, useState} from 'react';
 import TransactionsTable from '../components/homepage/transactions-table.component';
-import {Fragment, useEffect, useState} from 'react';
-import {
-  convertDateToString,
-  generateLabels,
-} from '../utils/general/general.utils';
+import {useEffect, useState} from 'react';
+import {generateLabels} from '../utils/general/general.utils';
 import LineChart from '../components/generic/line-chart.component';
 import {ChartDataset, Point} from 'chart.js';
-
-// const copy = (value: unknown) => {
-//   return JSON.parse(JSON.stringify(value));
-// };
+import {useNavigate} from 'react-router-dom';
 
 const Homepage: React.FC = () => {
   const {format} = useAppSelector(selectformatter);
   const targets = useAppSelector(selectEnhancedTargets);
+  const accounts = useAppSelector(selectAccounts);
   const [currentTargetId, setCurrentTargetId] = useState(targets[0]?._id);
+  const navigate = useNavigate();
+  const isLoading = useAppSelector(selectIsUserDataLoading);
+  const [sliderValue, setSliderValue] = useState<number>(1);
 
-  if (!targets.length)
-    return (
-      <div className="container">
-        <Navigation></Navigation>
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            py: 8,
-          }}
-        >
-          <p>No targets exist</p>
-        </Box>
-      </div>
-    );
+  useEffect(() => {
+    if (!targets.length && !isLoading) {
+      console.log('here');
+      navigate('/targets');
+    }
+  }, [targets]);
 
+  if (!targets.length) {
+    return <></>;
+  }
   const currentTarget = targets.filter(
     target => target._id === currentTargetId
   )[0];
+
   const validTarget = !!targets.filter(target => target._id === currentTargetId)
     .length;
 
@@ -88,166 +77,161 @@ const Homepage: React.FC = () => {
     currentTarget.total.dateEnd,
     currentTarget.total.dateBegin
   );
+
+  const {balanceBegin, days, balanceDisposable, balanceEnd, cashPerDay} =
+    currentTarget.total;
+  const maxBalanceEnd = balanceDisposable + balanceEnd;
+
+  useEffect(() => {
+    setSliderValue(balanceEnd / maxBalanceEnd);
+  }, [currentTargetId]);
+
+  const newBalanceEnd = maxBalanceEnd * sliderValue;
+  const balanceDisposableDelta = balanceEnd - newBalanceEnd;
+  const cpdDelta = balanceDisposableDelta / days;
+  const cpd = cashPerDay + cpdDelta;
+
+  const updateDataset = (item: number, i: number) => {
+    return item + (cashPerDay - cpd) * i;
+  };
+
   let datasets: ChartDataset<'line', (number | Point | null)[]>[] = [
     {
       label: 'Total',
-      data: currentTarget.total.dataset,
+      data: currentTarget.total.dataset.map(updateDataset),
       fill: true,
-      //   backgroundColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},0.2)`,
-      //   borderColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},1)`,
+      backgroundColor: 'rgba(44,24,47,0.2)',
+      borderColor: 'rgba(44,24,47,1)',
     },
   ];
 
   datasets = datasets.concat(
-    currentTarget.accounts.map(account => {
+    currentTarget.accounts.map(({name, dataset, id}) => {
+      if (!id) throw new Error();
+      const {color, isPriority} = accounts.filter(
+        account => account.id === id
+      )[0];
+
       return {
-        label: account.name,
-        data: account.dataset,
+        label: name,
+        data: isPriority ? dataset.map(updateDataset) : dataset,
         fill: true,
-        //   backgroundColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},0.2)`,
-        //   borderColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},1)`,
+        backgroundColor: `${color}33`,
+        borderColor: `${color}`,
       };
     })
   );
 
-  console.log(datasets);
+  function sliderHandler(event: Event, value: number | number[]) {
+    if (typeof value !== 'number') return;
+    setSliderValue(Number(value));
+  }
 
-  //   dataset: {
-  //     label: account.name,
-  //     data: generateAccountData(account, accountListTransactions, dates),
-  //     fill: true,
-  //     backgroundColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},0.2)`,
-  //     borderColor: `rgba(${accountColor.r},${accountColor.g},${accountColor.b},1)`,
-  //   }
+  if (!currentTargetId) {
+    return <></>;
+  }
 
-  //   const originalDisplayData = useAppSelector(selectDisplayData);
-  //   const targetDate = new Date('2023-07-24');
-  //   const displayData = copy(originalDisplayData) as typeof originalDisplayData;
-  //   const labels: Date[] = generateLabels(targetDate, new Date());
-  //   const cashPerDay = useAppSelector(selectCashPerDay);
-  //   const [sliderValue, setSliderValue] = useState<number>(1);
-  //   const defaultCurrency = displayData.length ? displayData[0].currency : null;
-  //   const [currencyState, setCurrencyState] = useState<string | null>(
-  //     defaultCurrency
-  //   );
-
-  //   const [cpd, setCpd] = useState({...cashPerDay});
-  //   useEffect(() => {
-  //     setCpd({...cashPerDay});
-  //   }, [cashPerDay]);
-
-  //   useEffect(() => {
-  //     if (currencyState) return;
-  //     const defaultCurrency = displayData.length ? displayData[0].currency : null;
-  //     setCurrencyState(defaultCurrency);
-  //   }, [displayData]);
-
-  //   if (currencyState) {
-  //     displayData.forEach(currencyData => {
-  //       currencyData.accounts.forEach(account => {
-  //         if (account.priority) {
-  //           account.dataset.data = account.dataset.data.map((d, i) => {
-  //             return (
-  //               (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1)
-  //             );
-  //           });
-  //         }
-  //       });
-  //       currencyData.total[0].data = currencyData.total[0].data.map((d, i) => {
-  //         return (d as number) - cpd[currencyData.currency].dailyAmount * (i + 1);
-  //       });
-  //     });
-  //   }
-
-  //   function sliderHandler(event: Event, value: number | number[]) {
-  //     if (!currencyState) return;
-  //     if (typeof value !== 'number') return;
-  //     const tempCpd = JSON.parse(JSON.stringify(cashPerDay));
-  //     const item = tempCpd[currencyState];
-  //     item.dailyAmount = item.dailyAmount * Number(value);
-  //     item.totalAmount = item.totalAmount * value;
-
-  //     setCpd(tempCpd);
-
-  //     setSliderValue(Number(value));
-  //   }
-
-  //   if (!currencyState) return <></>;
+  const TargetStatus = () => {
+    if (targets.findIndex(({_id}) => _id === currentTargetId)) {
+      return <Chip label={'Not started'} color="secondary"></Chip>;
+    }
+    return <Chip label={'Active'} color="primary" />;
+  };
 
   return (
-    <div className="container">
-      <Navigation></Navigation>
-      <Box
-        component="main"
+    <Box
+      sx={{display: 'flex', justifyContent: 'space-between', height: '100%'}}
+    >
+      <Paper
         sx={{
-          flexGrow: 1,
-          py: 8,
+          width: '45%',
+          padding: '20px',
+          height: '100%',
+          mr: '0.5rem',
         }}
       >
-        {!currentTargetId ? (
-          <></>
-        ) : (
-          <Container maxWidth="md">
-            <FormControl>
-              <Select
-                value={currentTargetId}
-                onChange={updateTarget}
-                inputProps={{'aria-label': 'Without label'}}
-              >
-                {targets.map(target => {
-                  return (
-                    <MenuItem key={target._id} value={target._id}>
-                      {target.total.dateBegin.toLocaleDateString()} -{' '}
-                      {target.total.dateEnd.toLocaleDateString()}
-                    </MenuItem>
-                  );
-                })}
-              </Select>
-            </FormControl>
+        <TransactionsTable targetId={currentTargetId} />
+      </Paper>
+      <Paper sx={{width: '55%', padding: '20px', ml: '0.5rem'}}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            padding: '1rem',
+          }}
+        >
+          <TargetStatus />
+          <FormControl>
+            <Select
+              value={currentTargetId}
+              onChange={updateTarget}
+              inputProps={{'aria-label': 'Without label'}}
+            >
+              {targets.map(target => {
+                return (
+                  <MenuItem key={target._id} value={target._id}>
+                    {target.total.dateBegin.toLocaleDateString()} -{' '}
+                    {target.total.dateEnd.toLocaleDateString()}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        </Box>
+        <LineChart labels={labels} datasets={datasets} />
+        <Box
+          display={'flex'}
+          flexDirection={'row'}
+          justifyContent={'space-between'}
+          alignItems={'center'}
+        >
+          <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+            <Typography>Start Balance</Typography>
+            <Typography> {format(balanceBegin)}</Typography>
+          </Box>
+          <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+            <Typography> {days} Days</Typography>
+          </Box>
+          <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+            <Typography>End Balance</Typography>
+            <Typography> {format(newBalanceEnd)}</Typography>
+          </Box>
+        </Box>
 
-            <LineChart labels={labels} datasets={datasets} />
+        <Slider
+          aria-label="CPD"
+          defaultValue={0}
+          valueLabelDisplay="auto"
+          value={sliderValue}
+          step={0.001}
+          //   marks
+          min={0}
+          max={1}
+          onChange={sliderHandler}
+        />
 
-            <Grid container spacing={2}>
-              <Grid item xs={4}>
-                <Typography>
-                  {/* Cash Per Day: {format(cpd[currencyState].dailyAmount)} */}
-                </Typography>
-              </Grid>
-              <Grid item xs={4}>
-                <Typography>
-                  {/* Days remaining: {cpd[currencyState].numberOfDays} */}
-                </Typography>
-              </Grid>
-              <Grid item xs={4}>
-                <Typography>
-                  {/* Cash remaining:{' '}
-                {formatValue(
-                  cashPerDay[currencyState].totalAmount -
-                    cpd[currencyState].totalAmount
-                )} */}
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Slider
-                  aria-label="CPD"
-                  defaultValue={0}
-                  valueLabelDisplay="auto"
-                  // value={sliderValue}
-                  step={0.001}
-                  //   marks
-                  min={0}
-                  max={1}
-                  // onChange={sliderHandler}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TransactionsTable targetId={currentTargetId} />
-              </Grid>
-            </Grid>
-          </Container>
-        )}
-      </Box>
-    </div>
+        <Box
+          display={'flex'}
+          flexDirection={'row'}
+          justifyContent={'space-between'}
+          alignItems={'center'}
+        >
+          <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+            <Typography>Cash per day</Typography>
+            <Typography> {format(cpd)}</Typography>
+          </Box>
+          <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+            <Typography>Cash per week</Typography>
+            <Typography> {format(cpd * 7)}</Typography>
+          </Box>
+          <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+            <Typography>Cash per month</Typography>
+            <Typography> {format((cpd * 365) / 12)}</Typography>
+          </Box>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 

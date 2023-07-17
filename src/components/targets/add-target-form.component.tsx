@@ -20,7 +20,10 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import {EnhancedTargets} from '../../utils/general/general.utils';
+import {
+  EnhancedTargets,
+  convertDateToString,
+} from '../../utils/general/general.utils';
 
 type ChildProps = {
   setShowAddTargetForm: React.Dispatch<React.SetStateAction<boolean>>;
@@ -143,6 +146,7 @@ const AddTargetForm: React.FC<ChildProps> = ({
                 onChange={handleChange}
                 value={dateEnd}
                 type="date"
+                inputProps={{min: convertDateToString(new Date())}}
               />
             </Grid>
           </Grid>

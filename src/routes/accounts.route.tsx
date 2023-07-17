@@ -1,5 +1,4 @@
 import {useState} from 'react';
-import Navigation from '../components/navigation/navigation.component';
 
 import {UserType} from '../store/user/user.types';
 import {Container} from '@mui/material';
@@ -15,28 +14,24 @@ const Accounts: React.FC = () => {
     useState<UserType['accounts'][0]>();
 
   return (
-    <div>
-      <Navigation></Navigation>
-      <br></br>
-      <Container component="main" maxWidth="md">
-        {showAddAccountForm ? (
-          <AddAccountForm setShowAddAccountForm={setShowAddAccountForm} />
-        ) : currenAccount ? (
-          <UpdateAccountForm
-            currentAccount={currenAccount}
+    <Container component="main" maxWidth="md">
+      {showAddAccountForm ? (
+        <AddAccountForm setShowAddAccountForm={setShowAddAccountForm} />
+      ) : currenAccount ? (
+        <UpdateAccountForm
+          currentAccount={currenAccount}
+          setCurrentAccount={setCurrentAccount}
+        />
+      ) : (
+        <>
+          <AccountsSummary /> <br></br>
+          <AccountsTable
             setCurrentAccount={setCurrentAccount}
+            setShowAddAccountForm={setShowAddAccountForm}
           />
-        ) : (
-          <>
-            <AccountsSummary /> <br></br>
-            <AccountsTable
-              setCurrentAccount={setCurrentAccount}
-              setShowAddAccountForm={setShowAddAccountForm}
-            />
-          </>
-        )}
-      </Container>
-    </div>
+        </>
+      )}
+    </Container>
   );
 };
 
