@@ -66,7 +66,25 @@ const UpdateTransactionForm: FC<ChildProps> = ({
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const {name, value} = event.target;
-    setFormFields({...formFields, [name]: value});
+
+    if (name === 'noEndDate') {
+      setFormFields({
+        ...formFields,
+        [name]: !formFields[name],
+      });
+    } else {
+      if (frequency === 'once') {
+        setFormFields({
+          ...formFields,
+          [name]: value,
+          endDate: name === 'startDate' ? value : startDate,
+          noEndDate: false,
+        });
+      } else {
+        const {name, value} = event.target;
+        setFormFields({...formFields, [name]: value});
+      }
+    }
   };
 
   const handleSelectChange = (event: SelectChangeEvent<string>) => {
