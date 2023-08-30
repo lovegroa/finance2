@@ -6,7 +6,7 @@ import {
   selectUserData,
 } from '../../store/user/user.slice';
 
-import {UserType} from '../../store/user/user.types';
+import {Account, UserType} from '../../store/user/user.types';
 import {useAppDispatch, useAppSelector} from '../../utils/hooks/hooks.utils';
 import {v4} from 'uuid';
 import {
@@ -39,7 +39,9 @@ const AddTransactionForm: React.FC<ChildProps> = ({
   const userData = useAppSelector(selectUserData);
   const userAuth = useAppSelector(selectUserAuth);
   const accounts = useAppSelector(selectAccounts);
-  const primaryAccount = accounts.filter(account => account.isPriority)[0];
+  let primaryAccount = accounts.filter(account => account.isPriority)[0];
+
+  if (!primaryAccount) primaryAccount = accounts[0];
 
   const dispatch = useAppDispatch();
 
