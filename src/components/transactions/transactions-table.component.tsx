@@ -16,6 +16,7 @@ import {
   UserType,
 } from '../../store/user/user.types';
 import {selectTransactions, selectformatter} from '../../store/user/user.slice';
+import {getDate} from 'date-fns';
 
 type ChildProps = {
   setCurrentTransaction: React.Dispatch<
@@ -41,6 +42,30 @@ const TransactionsTable: FC<ChildProps> = ({
       transaction.frequency === frequency
   );
 
+  accountTransactions.sort((a, b) => {
+    let result = 0;
+
+    if (a.name < b.name) {
+      result = -1;
+    }
+    if (a.name > b.name) {
+      result = 1;
+    }
+
+    const aDate = getDate(new Date(a.startDate));
+    const bDate = getDate(new Date(b.startDate));
+
+    if (aDate < bDate) {
+      result = -1;
+    }
+    if (aDate > bDate) {
+      result = 1;
+    }
+    return result;
+  });
+
+  console.log(accountTransactions, 'accountTransactions');
+
   return (
     <TableContainer>
       <Table aria-label="accounts table">
@@ -55,6 +80,7 @@ const TransactionsTable: FC<ChildProps> = ({
                   <TableCell align="right">
                     <MoneyIcon></MoneyIcon>
                   </TableCell>
+                  <TableCell align="right">Date</TableCell>
                 </TableRow>
                 {accountTransactions.map(transaction => {
                   return (
@@ -73,6 +99,9 @@ const TransactionsTable: FC<ChildProps> = ({
                         }
                       >
                         {formatter.format(Number(transaction.amount))}
+                      </TableCell>
+                      <TableCell align="right">
+                        {getDate(new Date(transaction.startDate))}
                       </TableCell>
                     </TableRow>
                   );
